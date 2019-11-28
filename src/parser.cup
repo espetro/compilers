@@ -1,0 +1,95 @@
+import java_cup.runtime.*;
+import java.lang.Math.*;
+import java.util.*;
+
+action code {:
+    // Code to be included in the action class - the one that parses the tokens (THIS)
+    private HashMap<String, Integer> vars = new HashMap<>();
+:};
+
+parser code {:
+    public void report_error(String message, Object info) {
+        if(info instanceof Symbol) {
+            Symbol curr = (Symbol)info;
+            if(curr.left != -1 && curr.right != -1) {
+                int line = curr.left + 1;
+                int column = curr.right + 1;
+                System.err.println(message + "(line " + line + ", column " + column + ")");
+            }
+        } else {
+            System.err.println(message);
+        }
+        System.err.println(info);
+    }
+:};
+
+terminal SEMI, LPAREN, RPAREN;
+terminal PLUS, MINUS, TIMES, POWER, DIV, UMINUS, UPLUS;
+terminal Integer NUMBER;
+terminal String ID;
+
+nonterminal Object program, statement_list, stmt;
+nonterminal Boolean cond;
+nonterminal Integer expr;
+
+// lowest priority
+precedence left PLUS, MINUS;
+precedence left TIMES, POWER, INTDIV, DIV, MOD;
+precedence left UMINUS, UPLUS;
+// highest priority
+
+
+program ::= statement_list:ls
+            {: RESULT = ls; :}
+            ;
+
+
+statement_list ::= statement_list stmt:s
+                 {: RESULT = s; :}
+                 | // empty list
+                 ;
+
+
+stmt ::= PRINT expr:e
+         {: System.out.println(e); :}
+         ;
+
+
+expr ::= expr:e1 PLUS expr:e2
+         {: RESULT = new Integer(e1.intValue() + e2.intValue()); :}
+         |
+         expr:e1 MINUS expr:e2
+         {: RESULT = new Integer(e1.intValue() - e2.intValue()); :}
+         |
+         expr:e1 TIMES expr:e2
+         {: RESULT = new Integer(e1.intValue() * e2.intValue()); :}
+         |
+         expr:e1 POWER expr:e2
+         {: RESULT = new Integer((int) java.lang.Math.pow(e1.intValue(), e2.intValue())); :}
+         |
+         expr:e1 DIV expr:e2
+         {: RESULT = new Integer(e1.intValue() / e2.intValue()); :}
+         |
+         expr:e1 INTDIV expr:e2
+         {: RESULT = new Integer(e1.intValue() / e2.intValue()); :}
+         |
+         expr:e1 MOD expr:e2
+         {: RESULT = new Integer(e1.intValue() % e2.intValue()); :}
+         |
+         LPAREN expr:e RPAREN
+         {: RESULT = e; :}
+         |
+         MINUS expr:e
+         {: RESULT = -e; :}
+         %prec UMINUS
+         |
+         PLUS expr:e
+         {: RESULT = +e; :}
+         %prec UPLUS
+         |
+         ID:i
+         {: RESULT = vars.get(i); :}
+         |
+         NUMBER:n
+         {: RESULT = n; :}
+         ;
