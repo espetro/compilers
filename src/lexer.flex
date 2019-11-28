@@ -36,35 +36,32 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "+" { return symbol(sym.PLUS); }
 "-" { return symbol(sym.MINUS); }
 "*" { return symbol(sym.TIMES); }
-"**" { return symbol(sym.POWER); }
 "/" { return symbol(sym.DIV); }
-"//" { return symbol(sym.INTDIV); }
-"=" { return symbol(sym.ASSIGN); }
+//"=" { return symbol(sym.ASSIGN); }
 "%" { return symbol(sym.MOD); }
 
-"not" { return symbol(sym.NOT); }
-"and" { return symbol(sym.AND); }
-"or" { return symbol(sym.OR); }
+//"not" { return symbol(sym.NOT); }
+//"and" { return symbol(sym.AND); }
+//"or" { return symbol(sym.OR); }
 
-"<" { return symbol(sym.LT); }
-">" { return symbol(sym.GT); }
-"==" { return symbol(sym.EQ); }
-"!=" { return symbol(sym.NEQ); }
-"<=" { return symbol(sym.LET); }
-">=" { return symbol(sym.GET); }
-"True" { return symbol(sym.TRUE); }
-"False" { return symbol(sym.FALSE); }
+//"<" { return symbol(sym.LT); }
+//">" { return symbol(sym.GT); }
+//"==" { return symbol(sym.EQ); }
+//"!=" { return symbol(sym.NEQ); }
+//"<=" { return symbol(sym.LET); }
+//">=" { return symbol(sym.GET); }
+//"True" { return symbol(sym.TRUE); }
+//"False" { return symbol(sym.FALSE); }
 
 
 "print" { return symbol(sym.PRINT); }
-"if" { return symbol(sym.IF); }
-"else" { return symbol(sym.ELSE); }
-"while" { return symbol(sym.WHILE); }
-"return" { return symbol(sym.RETURN); }
-\t|([ \f]{4}) { return symbol(sym.TAB); } // block indentation
+//"if" { return symbol(sym.IF); }
+//"else" { return symbol(sym.ELSE); }
+//"while" { return symbol(sym.WHILE); }
+//"return" { return symbol(sym.RETURN); }
 
 {Identifier} { return symbol(sym.ID, yytext()); }
-{Number} { return symbol(sym.NUMBER, new Integer(yytext())); }
+{Number} { return symbol(sym.NUMBER, yytext()); }
 
 {WhiteSpace} { /* ignore */ }
 

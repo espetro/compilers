@@ -1,10 +1,11 @@
 import java_cup.runtime.*;
-import java.lang.Math.*;
+import java.lang.*;
 import java.util.*;
 
 action code {:
     // Code to be included in the action class - the one that parses the tokens (THIS)
-    private HashMap<String, Integer> vars = new HashMap<>();
+    private HashMap<String, String> vars = new HashMap<>();
+    private StringBuffer sbuffer = new StringBuffer();
 :};
 
 parser code {:
@@ -23,24 +24,24 @@ parser code {:
     }
 :};
 
-terminal SEMI, LPAREN, RPAREN;
-terminal PLUS, MINUS, TIMES, POWER, DIV, UMINUS, UPLUS;
-terminal Integer NUMBER;
-terminal String ID;
+terminal SEMI, PRINT, LPAREN, RPAREN;
+terminal PLUS, MINUS, TIMES, MOD, DIV, UMINUS, UPLUS;
+//terminal String NUMBER;
+terminal String ID, NUMBER;
 
 nonterminal Object program, statement_list, stmt;
-nonterminal Boolean cond;
-nonterminal Integer expr;
+//nonterminal Boolean cond;
+nonterminal String expr;
 
 // lowest priority
 precedence left PLUS, MINUS;
-precedence left TIMES, POWER, INTDIV, DIV, MOD;
+precedence left TIMES, DIV, MOD;
 precedence left UMINUS, UPLUS;
 // highest priority
 
 
 program ::= statement_list:ls
-            {: RESULT = ls; :}
+            {: System.out.println(sbuffer); :}
             ;
 
 
@@ -50,45 +51,39 @@ statement_list ::= statement_list stmt:s
                  ;
 
 
-stmt ::= PRINT expr:e
-         {: System.out.println(e); :}
+stmt ::= PRINT expr:e SEMI
+         {: sbuffer.append("print " + e); :}
          ;
 
 
 expr ::= expr:e1 PLUS expr:e2
-         {: RESULT = new Integer(e1.intValue() + e2.intValue()); :}
+         {: RESULT = e1 + " + " + e2; :}
          |
          expr:e1 MINUS expr:e2
-         {: RESULT = new Integer(e1.intValue() - e2.intValue()); :}
+         {: RESULT = e1 + " - " + e2; :}
          |
          expr:e1 TIMES expr:e2
-         {: RESULT = new Integer(e1.intValue() * e2.intValue()); :}
-         |
-         expr:e1 POWER expr:e2
-         {: RESULT = new Integer((int) java.lang.Math.pow(e1.intValue(), e2.intValue())); :}
+         {: RESULT = e1 + " * " + e2; :}
          |
          expr:e1 DIV expr:e2
-         {: RESULT = new Integer(e1.intValue() / e2.intValue()); :}
-         |
-         expr:e1 INTDIV expr:e2
-         {: RESULT = new Integer(e1.intValue() / e2.intValue()); :}
+         {: RESULT = e1 + " / " + e2; :}
          |
          expr:e1 MOD expr:e2
-         {: RESULT = new Integer(e1.intValue() % e2.intValue()); :}
+         {: RESULT = e1 + " % " + e2; :}
          |
          LPAREN expr:e RPAREN
          {: RESULT = e; :}
          |
          MINUS expr:e
-         {: RESULT = -e; :}
+         {: RESULT = new String("-" + e); :}
          %prec UMINUS
          |
          PLUS expr:e
-         {: RESULT = +e; :}
+         {: RESULT = new String("+" + e); :}
          %prec UPLUS
          |
          ID:i
-         {: RESULT = vars.get(i); :}
+         {: RESULT = i; :}
          |
          NUMBER:n
          {: RESULT = n; :}

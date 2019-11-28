@@ -1,9 +1,10 @@
 import java.io.FileReader;
 
 public class app {
-    private final String fnameOut = "app/out/result.out";
+//    private final String fnameOut = "app/out/result.out";
+
     public static void main(String[] args) throws Exception {
-        String fnameIn = "app/in/a0.pypl";
+        String fnameIn = "app/in/a2.pl";
         System.out.println("Input file: " + fnameIn);
 
         Lexer scanner = new Lexer(new FileReader(fnameIn));
