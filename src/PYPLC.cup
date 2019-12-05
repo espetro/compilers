@@ -1,0 +1,214 @@
+import java_cup.runtime.*;
+import java.lang.*;
+import java.util.*;
+
+// %%
+
+action code {:
+    Condition range_cond;
+    String power_cond;
+    String else_new_label, else_postpone_false_label;
+:}
+
+terminal COMMA, COLON, PRINT, LPAREN, RPAREN, ASSIGN, IN, RANGE, TAB, ELSE;
+terminal PLUS, MINUS, TIMES, POWER, MOD, DIV, INTDIV, UMINUS;
+terminal EQ, NEQ, LT, GT, LE, GE;
+terminal String IF, ELIF;
+terminal Condition FOR, WHILE;
+terminal String ID, NUMBER;
+
+nonterminal Object program, statement_list, stmt, while_stmt, for_stmt, if_else_elif_stmt, else_opt;
+nonterminal block_statement_list;
+nonterminal String expr;
+nonterminal ArrayList<String> elif_opt;
+nonterminal Condition cond;
+
+// lowest priority
+precedence left IF, ELIF;
+precedence right ASSIGN;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIV, INTDIV, MOD;
+precedence left UMINUS;
+precedence right POWER;
+precedence left ELSE;
+precedence left TAB;
+// highest priority
+
+// %%
+
+program ::= statement_list
+            {: Translator._halt(); :}
+            ;
+
+statement_list ::= statement_list stmt
+                   |
+                   stmt
+                   ;
+
+stmt ::= expr
+         |
+         while_stmt
+         |
+         if_else_elif_stmt
+         |
+         for_stmt
+         |
+         PRINT expr:e
+         {: Translator._print(e); :}
+         ;
+
+block_statement_list ::= block_statement_list TAB stmt
+                         |
+                         TAB stmt
+                         ;
+
+// ==================== WHILE STATEMENT ====================
+// =========================================================
+
+while_stmt ::= WHILE:tagWhile       {: Translator._label(tagWhile.TrueLabel()); :}
+               cond:c COLON         {: Translator._label(c.TrueLabel()); :}
+               block_statement_list {: Translator._goto(tagWhile.TrueLabel()); Translator._label(c.FalseLabel()); :}
+               ;
+
+// ==================== IF-ELIF-ELSE STATEMENT ====================
+// ================================================================
+
+if_else_elif_stmt ::= IF:ExitIf cond:c COLON {:
+                          Translator._label(c.TrueLabel());
+                      :}
+                      block_statement_list   {:
+                          Translator._goto(ExitIf);
+                          Translator._label(c.FalseLabel());
+                          // propagate the ExitIf label to subsequent 'elif's
+                          // opt1 = ExitIf;
+                      :}
+                      elif_opt:ElifExitTags
+                      {::}
+                      else_opt               {:
+                          Translator._label(ExitIf);
+                          // prints out all elif exit tags at once (if any)
+                          for (String ExitLabel : ElifExitTags) {
+                              Translator._label(ExitLabel);
+                          }
+                      :}
+                      ;
+
+elif_opt ::= ELIF:ExitElIf cond:c COLON    {:
+                 Translator._label(c.TrueLabel());
+             :}
+             block_statement_list          {:
+                 Translator._goto(ExitElIf);
+                 Translator._label(c.FalseLabel());
+                 // propagate the ExitIf label to subsequent 'elif's
+                 // opt2 = ExitIf;
+
+             :}
+             elif_opt:opt2                 {:
+                 // builds up a list of exit labels
+                 ArrayList<String> ls = new ArrayList<>();
+                 ls.add(ExitElIf);
+                 ls.addAll(opt2);
+                 RESULT = ls;
+             :}
+             |
+             // empty
+             {: RESULT = new ArrayList<>(); /* an empty list of exit labels */ :}
+             ;
+
+else_opt ::= ELSE COLON block_statement_list
+             |
+             // empty
+             ;
+
+// ======================== FOR STATEMENT =========================
+// ================================================================
+
+for_stmt ::= FOR:tagFor ID:i IN RANGE LPAREN NUMBER:n1
+             {: Translator.assignment(i, n1); Translator._label(tagFor.TrueLabel()); :}
+             COMMA NUMBER:n2 RPAREN COLON {:
+                range_cond = Translator.comparison(i, Translator.LT, n2);
+                Translator._label(range_cond.TrueLabel());
+             :}
+             block_statement_list
+             {: Translator._goto(tagFor.TrueLabel()); Translator._label(range_cond.FalseLabel()); :}
+             ;
+
+// ==================== EXPR - COND STATEMENTS ====================
+// ================================================================
+
+expr ::= expr:e1 PLUS expr:e2
+         {: RESULT = Translator.arithmetic(e1, "+", e2, false); :}
+         |
+         expr:e1 MINUS expr:e2
+         {: RESULT = Translator.arithmetic(e1, "-", e2, false); :}
+         |
+         expr:e1 TIMES expr:e2
+         {: RESULT = Translator.arithmetic(e1, "*", e2, false); :}
+         |
+         expr:e1 DIV expr:e2
+         {: RESULT = Translator.arithmetic(e1, "/", e2, false); :}
+         |
+         expr:e1 INTDIV expr:e2
+         {: RESULT = Translator.arithmetic(e1, "/", e2, false); :}
+         |
+         expr:e1 MOD expr:e2 {:
+            String tmp1 = Translator.arithmetic(e1, "/", e2, false);
+            String tmp2 = Translator.arithmetic(e2, "*", tmp1, false);
+            RESULT = Translator.arithmetic(e1, "-", tmp2, false);
+         :}
+         |
+         expr:e1 POWER expr:e2 {:
+             String powerWhileStart = Translator.getNewLabel();
+             String exp = Translator.assignment(Translator.getNewTmpVar(), e2);
+             String result = Translator.assignment(Translator.getNewTmpVar(), "1");
+
+             Translator._label(powerWhileStart);
+             Condition powerWhile = Translator.comparison(exp, Translator.NEQ, "0");
+
+             Translator._label(powerWhile.TrueLabel());
+             result = Translator.arithmetic(result, "*", e1, true);
+             exp = Translator.arithmetic(exp, "-", "1", true);
+             Translator._goto(powerWhileStart);
+
+             Translator._label(powerWhile.FalseLabel());
+             RESULT = result;
+         :}
+         |
+         MINUS expr:e1
+         {: RESULT = Translator.arithmetic("", "-", e1, false); :}
+         %prec UMINUS
+         |
+         LPAREN expr:e RPAREN
+         {: RESULT = e; :}
+         |
+         ID:i ASSIGN expr:e
+         {: RESULT = Translator.assignment(i, e); :}
+         |
+         ID:i
+         {: RESULT = i; :}
+         |
+         NUMBER:n
+         {: RESULT = n; :}
+         ;
+
+cond ::= expr:e1 EQ expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.EQ, e2); :}
+         |
+         expr:e1 NEQ expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.NEQ, e2); :}
+         |
+         expr:e1 LT expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.LT, e2); :}
+         |
+         expr:e1 GT expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.GT, e2); :}
+         |
+         expr:e1 LE expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.LE, e2); :}
+         |
+         expr:e1 GE expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.GE, e2); :}
+         |
+         LPAREN cond:c RPAREN
+         {: RESULT = c; :}
+         ;

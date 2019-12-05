@@ -1,0 +1,12 @@
+t0 = 4;
+t1 = 1;
+label L0;
+if (t0 != 0) goto L1;
+goto L2;
+label L1;
+t1 = t1 * 3;
+t0 = t0 - 1;
+goto L0;
+label L2;
+print t1;
+halt;

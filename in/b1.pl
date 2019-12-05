@@ -1,7 +1,5 @@
-x=6;
-y=2;
-{
-    p = q = 2;
-    zeta = p+q;
-}
-print (zeta+x/y);
+if a > 10:
+    print(2)
+else:
+    print(1)
+# Esto da error ('a' no esta inicializada)

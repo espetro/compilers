@@ -1,0 +1,9 @@
+i = 2;
+if (i == 2) goto L1;
+goto L2;
+label L1;
+print i;
+goto L0;
+label L2;
+label L0;
+halt;

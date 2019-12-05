@@ -1,0 +1,11 @@
+i = 1;
+j = i;
+if (i == 1) goto L1;
+goto L2;
+label L1;
+print i;
+goto L0;
+label L2;
+print j;
+label L0;
+halt;

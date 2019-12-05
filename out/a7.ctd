@@ -1,0 +1,9 @@
+i = 1;
+label L0;
+if (i < 3) goto L2;
+goto L3;
+label L2;
+print i;
+goto L0;
+label L3;
+print 3;

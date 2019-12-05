@@ -4,6 +4,7 @@ import java.util.*;
 
 action code {:
     // Code to be included in the action class - the one that parses the tokens (THESE RULES)
+    String init_type = "";
     String else_postpone_false_label = "";
     String else_new_label = "";
 :};
@@ -28,7 +29,7 @@ parser code {:
 // %%
 
 
-terminal SEMI, PRINT, LPAREN, RPAREN, ASSIGN, LCURLY, RCURLY;  // TAB
+terminal SEMI, COMMA, PRINT, LPAREN, RPAREN, ASSIGN, LCURLY, RCURLY, LBRACKET, RBRACKET, INT;
 terminal PLUS, MINUS, TIMES, MOD, DIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal NOT, OR, AND, TRUE, FALSE;
@@ -36,9 +37,8 @@ terminal String IF, ELSE;
 terminal Condition FOR, DO, WHILE;
 terminal String ID, NUMBER;
 
-nonterminal Object statement_list, stmt;
-nonterminal Object else;
-nonterminal String expr;
+nonterminal Object statement_list, stmt, if_stmt, else_opt, while_stmt, do_while_stmt, for_stmt;
+nonterminal String expr, id_call, var_init_list;
 nonterminal Condition cond, logical;
 
 // lowest priority
@@ -60,27 +60,18 @@ statement_list ::= statement_list stmt
                    stmt
                    ;
 
-stmt ::= expr SEMI
-         {: /* done in 'expr' nonterminal */ :}
+stmt ::= INT:t              {: init_type = "int"; :}
+         var_init_list SEMI
          |
-         IF:tagIf LPAREN cond:c RPAREN {: Translator._label(c.TrueLabel()); :}
-         stmt                          {: else_postpone_false_label = c.FalseLabel(); :}
-         else                          {::}
+         expr SEMI
          |
-         WHILE:tagWhile LPAREN {: Translator._label(tagWhile.TrueLabel()); :}
-         cond:c RPAREN         {: Translator._label(c.TrueLabel()); :}
-         stmt                  {: Translator._goto(tagWhile.TrueLabel()); Translator._label(c.FalseLabel()); :}
+         if_stmt
          |
-         DO:tagDo                             {: Translator._label(tagDo.TrueLabel()); :}
-         stmt WHILE LPAREN cond:c RPAREN SEMI {:
-            Translator._label(c.TrueLabel()); /* => */ Translator._goto(tagDo.TrueLabel());
-            Translator._label(c.FalseLabel());
-         :}
+         while_stmt
          |
-         FOR:tagFor LPAREN expr:e1 SEMI {: Translator._label(tagFor.TrueLabel()); :}
-         cond:c1 SEMI                   {: Translator._label(c1.TrueLabel()); :}
-         expr:e2 RPAREN                 {::}
-         stmt                           {: Translator._goto(tagFor.TrueLabel()); Translator._label(c1.FalseLabel()); :}
+         do_while_stmt
+         |
+         for_stmt
          |
          PRINT expr:e SEMI
          {: Translator._print(e); :}
@@ -89,14 +80,48 @@ stmt ::= expr SEMI
          {: /* done in the inner statement list */ :}
          ;
 
-else ::= ELSE:tagElse  {:
+
+// ================================================================
+// ======================== COMPOSED STATEMENTS ===================
+
+if_stmt ::= IF:tagIf LPAREN cond:c RPAREN {: Translator._label(c.TrueLabel()); :}
+            stmt                          {: else_postpone_false_label = c.FalseLabel(); :}
+            else_opt                      {::}
+            ;
+
+else_opt ::= ELSE:tagElse  {:
             else_new_label = Translator.getNewLabel(); // creates a new label for exiting the whole statement
             Translator._goto(else_new_label);
             Translator._label(else_postpone_false_label);
          :}
          stmt          {: Translator._label(else_new_label); :}
-         | /* empty */ {: Translator._label(else_postpone_false_label); :} // print the former conditional false label
+         | /* empty */
+         {: Translator._label(else_postpone_false_label); :}
          ;
+
+
+while_stmt ::= WHILE:tagWhile LPAREN {: Translator._label(tagWhile.TrueLabel()); :}
+               cond:c RPAREN         {: Translator._label(c.TrueLabel()); :}
+               stmt                  {: Translator._goto(tagWhile.TrueLabel()); Translator._label(c.FalseLabel()); :}
+               ;
+
+
+do_while_stmt ::= DO:tagDo                             {: Translator._label(tagDo.TrueLabel()); :}
+                  stmt WHILE LPAREN cond:c RPAREN SEMI {: // stmt gets written by itself
+                    Translator._label(c.TrueLabel()); /* => */ Translator._goto(tagDo.TrueLabel());
+                    Translator._label(c.FalseLabel());
+                  :}
+                  ;
+
+for_stmt ::= FOR:tagFor LPAREN expr:e1 SEMI {: Translator._label(tagFor.TrueLabel()); :}
+             cond:c1 SEMI                   {: Translator._label(c1.TrueLabel()); :}
+             expr:e2 RPAREN                 {::}
+             stmt                           {: Translator._goto(tagFor.TrueLabel()); Translator._label(c1.FalseLabel()); :}
+             ;
+
+
+// ================================================================
+// ======================== ARITHMETIC OPS ========================
 
 expr ::= expr:e1 PLUS expr:e2
          {: RESULT = Translator.arithmetic(e1, "+", e2); :}
@@ -120,15 +145,30 @@ expr ::= expr:e1 PLUS expr:e2
          LPAREN expr:e RPAREN
          {: RESULT = e; :}
          |
-         ID:i ASSIGN expr:e
+         ID:i ASSIGN expr:e // once the variable has already been declared
          {: RESULT = Translator.assignment(i, e); :}
          |
-         ID:i
-         {: RESULT = i; :}
+         id_call // just an ID, no assignments or declarations
          |
          NUMBER:n
          {: RESULT = n; :}
          ;
+
+var_init_list ::= var_init_list COMMA ID:i
+                  {: RESULT = Translator.initKey(i, init_type); :}
+                  |
+                  ID:i
+                  {: RESULT = Translator.initKey(i, init_type); :}
+                  ;
+id_call ::= ID:i
+            {: RESULT = Translator.getKey(i); :}
+            |
+            LBRACKET id_call:i RBRACKET
+            {: RESULT = i; :}
+            ;
+
+// ================================================================
+// ======================== COMPARISON OPS ========================
 
 cond ::= expr:e1 EQ expr:e2
          {: RESULT = Translator.comparison(e1, Translator.EQ, e2); :}
@@ -154,6 +194,9 @@ cond ::= expr:e1 EQ expr:e2
          logical:l
          {: RESULT = l; :}
          ;
+
+// ================================================================
+// ======================== LOGICAL OPS ===========================
 
 logical ::= NOT cond:c
             {: c.permute(); RESULT = c; :}
