@@ -1,11 +1,6 @@
-j = i = 3
-if i == 1:
-    print i
-elif i == 2:
-    print i
-elif i == 3:
-    if j > 2:
-        print j-i
-
+if 1 == 1:
+    print 1
+    if 2 > 5:
+        print (2 * 5)
 else:
-    print 4
+    print (2**2)

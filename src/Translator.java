@@ -1,5 +1,6 @@
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -61,6 +62,14 @@ public class Translator {
 
     public static void _label(String label) {
         out.println(String.format("label %s;", label));
+    }
+
+    public static void _allLabels(List<String> labels) {
+        if(labels.size() > 0) {
+            for (String l : labels) {
+                out.println(String.format("label %s;", l));
+            }
+        }
     }
 
     public static String _applyCond(String c1, int comp, String c2) {

@@ -63,7 +63,7 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "elif" { return symbol(sym.ELIF, Translator.getNewLabel()); }
 "for" { return symbol(sym.FOR, Translator.getNewLabel()); }
 "while" { return symbol(sym.WHILE, new Condition()); }
-"range" { return symbol(sym.RANGE, null); /* We assign the condition on behalf of the range limits */ }
+"range" { return symbol(sym.RANGE); }
 
 {Identifier} { return symbol(sym.ID, yytext()); }
 {Number} { return symbol(sym.NUMBER, yytext()); }

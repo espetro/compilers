@@ -4,28 +4,28 @@ import java.util.*;
 
 // %%
 
-terminal COMMA, COLON, PRINT, LPAREN, RPAREN, ASSIGN, IN, TAB, ELSE;
+terminal COMMA, COLON, PRINT, LPAREN, RPAREN, ASSIGN, IN, TAB, ELSE, RANGE;
 terminal PLUS, MINUS, TIMES, POWER, MOD, DIV, INTDIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal String IF, ELIF, FOR;
-terminal Condition WHILE, RANGE;
+terminal Condition WHILE;
 terminal String ID, NUMBER;
 
-nonterminal Object program, statement_list, stmt, while_stmt, for_stmt, if_else_elif_stmt, else_opt;
+nonterminal Object program, statement_list, stmt, while_stmt, if_else_elif_stmt, else_opt;
 nonterminal block_statement_list;
 nonterminal String expr;
 nonterminal ArrayList<String> elif_opt;
-nonterminal Condition cond;
+nonterminal Condition cond, for_stmt;
 
 // lowest priority
-precedence left IF, ELIF;
+precedence nonassoc TAB;
 precedence right ASSIGN;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV, INTDIV, MOD;
 precedence left UMINUS;
 precedence right POWER;
-precedence left ELSE;
-precedence left TAB;
+precedence right IF, ELIF;
+precedence nonassoc ELSE;
 // highest priority
 
 // %%
@@ -70,7 +70,7 @@ while_stmt ::= WHILE:tagWhile       {: Translator._label(tagWhile.TrueLabel()); 
 if_else_elif_stmt ::= IF:ExitIf cond:c COLON {:
                           Translator._label(c.TrueLabel());
                       :}
-                      block_statement_list   {:
+                      block_statement_list {:
                           Translator._goto(ExitIf);
                           Translator._label(c.FalseLabel());
                           // propagate the ExitIf label to subsequent 'elif's
@@ -78,12 +78,10 @@ if_else_elif_stmt ::= IF:ExitIf cond:c COLON {:
                       :}
                       elif_opt:ElifExitTags
                       {::}
-                      else_opt               {:
-                          Translator._label(ExitIf);
+                      else_opt {:
+                          ElifExitTags.add(ExitIf);
                           // prints out all elif exit tags at once (if any)
-                          for (String ExitLabel : ElifExitTags) {
-                              Translator._label(ExitLabel);
-                          }
+                          Translator._allLabels(ElifExitTags);
                       :}
                       ;
 
@@ -117,16 +115,20 @@ else_opt ::= ELSE COLON block_statement_list
 // ======================== FOR STATEMENT =========================
 // ================================================================
 
-for_stmt ::= FOR:tagFor ID:i IN RANGE:rng LPAREN NUMBER:n1
-             {: Translator.assignment(i, n1); Translator._label(tagFor); :}
+// WE CAN USE RESULT AS A SUB-GLOBAL VALUE FOR THE STATEMENT BEING
+// ATTRIBUTES DECLARED AT JFLEX CANNOT BE CHANGED - THUS WE CAN'T USE 'RNG' AS Condition HOLDER
+for_stmt ::= FOR:tagFor ID:i IN RANGE LPAREN NUMBER:n1 {:
+                 Translator.assignment(i, n1);
+                 Translator._label(tagFor);
+             :}
              COMMA NUMBER:n2 RPAREN COLON {:
-                rng = Translator.comparison(i, Translator.LT, n2);
-                Translator._label(rng.TrueLabel());
+                 RESULT = Translator.comparison(i, Translator.LT, n2);
+                 Translator._label(RESULT.TrueLabel());
              :}
              block_statement_list {:
-                Translator.arithmetic(i, "+", "1", true);
-                Translator._goto(tagFor);
-                Translator._label(rng.FalseLabel());
+                 Translator.arithmetic(i, "+", "1", true);
+                 Translator._goto(tagFor);
+                 Translator._label(RESULT.FalseLabel());
              :}
              ;
 
@@ -160,7 +162,9 @@ expr ::= expr:e1 PLUS expr:e2
              String result = Translator.assignment(Translator.getNewTmpVar(), "1");
 
              Translator._label(powerWhileStart);
-             Condition powerWhile = Translator.comparison(exp, Translator.NEQ, "0");
+             // NEQ is not allowed in .CTD. Thus we do EQ and permute
+             Condition powerWhile = Translator.comparison(exp, Translator.EQ, "0");
+             powerWhile.permute();
 
              Translator._label(powerWhile.TrueLabel());
              result = Translator.arithmetic(result, "*", e1, true);
@@ -188,23 +192,38 @@ expr ::= expr:e1 PLUS expr:e2
          {: RESULT = n; :}
          ;
 
+// INTERMEDIATE CODE ONLY ACCEPTS > OR == COMPARISONS
 cond ::= expr:e1 EQ expr:e2
          {: RESULT = Translator.comparison(e1, Translator.EQ, e2); :}
          |
-         expr:e1 NEQ expr:e2
-         {: RESULT = Translator.comparison(e1, Translator.NEQ, e2); :}
+         expr:e1 NEQ expr:e2 {:
+             // permute the condition labels
+             Condition foo = Translator.comparison(e1, Translator.EQ, e2);
+             foo.permute();
+             RESULT = foo;
+         :}
          |
          expr:e1 LT expr:e2
          {: RESULT = Translator.comparison(e1, Translator.LT, e2); :}
          |
-         expr:e1 GT expr:e2
-         {: RESULT = Translator.comparison(e1, Translator.GT, e2); :}
+         expr:e1 GT expr:e2 {:
+             // permute the operators and use <
+             RESULT = Translator.comparison(e2, Translator.LT, e1);
+         :}
          |
          expr:e1 LE expr:e2
          {: RESULT = Translator.comparison(e1, Translator.LE, e2); :}
          |
-         expr:e1 GE expr:e2
-         {: RESULT = Translator.comparison(e1, Translator.GE, e2); :}
+         expr:e1 GE expr:e2 {:
+             // permute the operators and use <
+             // do an OR with ==
+             Condition c1 = Translator.comparison(e2, Translator.EQ, e1);
+             Translator._label(c1.FalseLabel());
+             Condition c2 = Translator.comparison(e2, Translator.LT, e1);
+             Translator._label(c1.TrueLabel());
+             Translator._goto(c2.TrueLabel());
+             RESULT = c2;
+         :}
          |
          LPAREN cond:c RPAREN
          {: RESULT = c; :}
