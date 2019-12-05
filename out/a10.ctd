@@ -1,6 +1,6 @@
 i = 1;
 j = i;
-if (i == 1) goto L1;
+if (i < 1) goto L1;
 goto L2;
 label L1;
 print i;

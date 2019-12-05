@@ -4,17 +4,11 @@ import java.util.*;
 
 // %%
 
-action code {:
-    Condition range_cond;
-    String power_cond;
-    String else_new_label, else_postpone_false_label;
-:}
-
-terminal COMMA, COLON, PRINT, LPAREN, RPAREN, ASSIGN, IN, RANGE, TAB, ELSE;
+terminal COMMA, COLON, PRINT, LPAREN, RPAREN, ASSIGN, IN, TAB, ELSE;
 terminal PLUS, MINUS, TIMES, POWER, MOD, DIV, INTDIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
-terminal String IF, ELIF;
-terminal Condition FOR, WHILE;
+terminal String IF, ELIF, FOR;
+terminal Condition WHILE, RANGE;
 terminal String ID, NUMBER;
 
 nonterminal Object program, statement_list, stmt, while_stmt, for_stmt, if_else_elif_stmt, else_opt;
@@ -123,14 +117,17 @@ else_opt ::= ELSE COLON block_statement_list
 // ======================== FOR STATEMENT =========================
 // ================================================================
 
-for_stmt ::= FOR:tagFor ID:i IN RANGE LPAREN NUMBER:n1
-             {: Translator.assignment(i, n1); Translator._label(tagFor.TrueLabel()); :}
+for_stmt ::= FOR:tagFor ID:i IN RANGE:rng LPAREN NUMBER:n1
+             {: Translator.assignment(i, n1); Translator._label(tagFor); :}
              COMMA NUMBER:n2 RPAREN COLON {:
-                range_cond = Translator.comparison(i, Translator.LT, n2);
-                Translator._label(range_cond.TrueLabel());
+                rng = Translator.comparison(i, Translator.LT, n2);
+                Translator._label(rng.TrueLabel());
              :}
-             block_statement_list
-             {: Translator._goto(tagFor.TrueLabel()); Translator._label(range_cond.FalseLabel()); :}
+             block_statement_list {:
+                Translator.arithmetic(i, "+", "1", true);
+                Translator._goto(tagFor);
+                Translator._label(rng.FalseLabel());
+             :}
              ;
 
 // ==================== EXPR - COND STATEMENTS ====================

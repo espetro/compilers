@@ -9,8 +9,6 @@ import java.util.*;
 %column
 
 %{
-    // public ArrayList<String> ignored = new ArrayList<>();
-
     private Symbol symbol(int type) {
         return new Symbol(type, yyline, yycolumn);
     }
@@ -59,13 +57,13 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 ">=" { return symbol(sym.GE); }
 
 "print" { return symbol(sym.PRINT); }
-"range" { return symbol(sym.RANGE); }
 "in" { return symbol(sym.IN); }
+"else" { return symbol(sym.ELSE); }
 "if" { return symbol(sym.IF, Translator.getNewLabel()); }
 "elif" { return symbol(sym.ELIF, Translator.getNewLabel()); }
-"else" { return symbol(sym.ELSE); }
+"for" { return symbol(sym.FOR, Translator.getNewLabel()); }
 "while" { return symbol(sym.WHILE, new Condition()); }
-"for" { return symbol(sym.FOR, new Condition()); }
+"range" { return symbol(sym.RANGE, null); /* We assign the condition on behalf of the range limits */ }
 
 {Identifier} { return symbol(sym.ID, yytext()); }
 {Number} { return symbol(sym.NUMBER, yytext()); }
@@ -75,4 +73,5 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 {Comment} { /* ignore */ }
 
 // only catches 1 character at a time
-[^] { throw new Error("Illegal character: " + yytext()); }
+// [^] { throw new Error("Illegal character: " + yytext()); }
+[^] { /* ignore */ }

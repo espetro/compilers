@@ -27,7 +27,9 @@ public class PYPLC {
 
         } catch (Exception e) {
             System.err.println("Exception found");
-            e.printStackTrace();
+            // e.printStackTrace();
+        } catch (Error e) {
+            System.err.println("Error found");
         }
   }
 }
