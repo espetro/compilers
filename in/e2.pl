@@ -1,4 +1,7 @@
 x=1;
+print(a);
+print(b);
+print(c);
 if ( a != b ) 
      if ( b == c )
            x = x+2;

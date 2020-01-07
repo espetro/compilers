@@ -1,16 +1,23 @@
+import java.nio.charset.StandardCharsets;
 import java_cup.runtime.*;
 import java.util.*;
 
 %% // options, scanner code and macros
 
-%class Lexer
 %unicode
 %cup
 %line
 %column
 
 %{
-    // public ArrayList<String> ignored = new ArrayList<>();
+    private String getCharInfo(String txt) {
+        String out = "";
+        byte[] codes = txt.getBytes(StandardCharsets.US_ASCII);
+        for(byte b : codes) {
+            out += b + " ";
+        }
+        return out;
+    }
 
     private Symbol symbol(int type) {
         return new Symbol(type, yyline, yycolumn);
@@ -20,11 +27,16 @@ import java.util.*;
     }
 %}
 
+Comment = {LineComment} | {MultiLineComment}
+LineComment = "//" {InputCharacter}* {LineBreak}?
+MultiLineComment = "/*" ~"*/"
+
+InputCharacter = [^\r\n]
 Identifier = [A-Za-z_][A-Za-z0-9_]*
 Number = 0 | [1-9][0-9]*
 
 LineBreak = \n|\r|\r\n
-SingleSpace = [ \f]
+SingleSpace = [ \f\t]
 WhiteSpace = {LineBreak} | {SingleSpace}
 
 %% // Token definitions - highest to lowest
@@ -39,8 +51,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "-" { return symbol(sym.MINUS); }
 "*" { return symbol(sym.TIMES); }
 "/" { return symbol(sym.DIV); }
+
 "=" { return symbol(sym.ASSIGN); }
-"%" { return symbol(sym.MOD); }
 
 "<" { return symbol(sym.LT); }
 ">" { return symbol(sym.GT); }
@@ -52,23 +64,19 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "!" { return symbol(sym.NOT); }
 "&&" { return symbol(sym.AND); }
 "||" { return symbol(sym.OR); }
-"true" { return symbol(sym.TRUE); }
-"false" { return symbol(sym.FALSE); }
-
 
 "print" { return symbol(sym.PRINT); }
-"if" { return symbol(sym.IF, yytext()); }
-"else" { return symbol(sym.ELSE, yytext()); }
-"do" { return symbol(sym.DO, new Condition()); }
-"while" { return symbol(sym.WHILE, new Condition()); }
+"if" { return symbol(sym.IF, Translator.getNewLabel()); }
+"else" { return symbol(sym.ELSE, Translator.getNewLabel()); }
 "for" { return symbol(sym.FOR, new Condition()); }
-//"return" { return symbol(sym.RETURN); }
+"do" { return symbol(sym.DO, Translator.getNewLabel()); }
+"while" { return symbol(sym.WHILE, Translator.getNewLabel()); }
 
 {Identifier} { return symbol(sym.ID, yytext()); }
 {Number} { return symbol(sym.NUMBER, yytext()); }
 
-// \t|[ \f]{4} { System.out.println("TAB found"); }
 {WhiteSpace} { /* ignore */ }
+{Comment} { /* ignore */ }
 
 // only catches 1 character at a time
-. { throw new Error("Illegal character <"+yytext()+">"); }
+[^] { String txt = yytext(); throw new Error("Illegal character:\n" + txt + "\n" + getCharInfo(txt) + "\n"); }
