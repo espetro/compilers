@@ -92,10 +92,12 @@ public class Translator {
     public static String assignment(String ident, String expr) {
         // Case 1: INT = FLOAT => INT = (INT) FLOAT
         if (isInt(ident) && isFloat(expr)) {
+            if (isFloatConst(expr)) { _errorTrace("Translator Error: Assignment (float const to int)"); }
             _applyCastedAssign(ident, "(int)", expr);
         }
         // Case 2: FLOAT = INT => FLOAT = (FLOAT) INT
         else if (isFloat(ident) && isInt(expr)) {
+            if (isIntConst(expr)) { _errorTrace("Translator Error: Assignment (int const to float)"); }
             _applyCastedAssign(ident, "(float)", expr);
         }
         // Otherwise: no casting
@@ -152,6 +154,7 @@ public class Translator {
     public static void _errorTrace(String info) {
         err.println("error;");
         err.println(String.format("# %s", info));
+        System.exit(0);
     }
 
     public static void _halt() {
