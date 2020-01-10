@@ -67,6 +67,7 @@ public class Translator {
             temp_type = "float";
             if (isInt(e2)) {
                 String t0 = getNewTmpVar();
+                Variables.declareTempVar(t0, "0", "float");
                 _applyCastedAssign(t0, "(float)", e2);
                 e2 = t0;
             }
@@ -77,6 +78,7 @@ public class Translator {
             temp_type = "float";
             if (isInt(e1)) {
                 String t0 = getNewTmpVar();
+                Variables.declareTempVar(t0, "0", "float");
                 _applyCastedAssign(t0, "(float)", e1);
                 e1 = t0;
             }

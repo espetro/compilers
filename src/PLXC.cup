@@ -162,16 +162,16 @@ expr ::= expr:e1 PLUS expr:e2
          |
          INT_CAST expr:e
          {:
-            String t0 = Translator.getNewTmpVar();
-            Variables.declareTempVar(t0, "0", "int");
-            RESULT = Translator.assignment(t0, e);
+            RESULT = Translator.getNewTmpVar();
+            Variables.declareTempVar(RESULT, "0", "int");
+            Translator._applyCastedAssign(RESULT, "(int)", e);
          :}
          |
          FLOAT_CAST expr:e
          {:
-            String t0 = Translator.getNewTmpVar();
-            Variables.declareTempVar(t0, "0", "float");
-            RESULT = Translator.assignment(t0, e);
+            RESULT = Translator.getNewTmpVar();
+            Variables.declareTempVar(RESULT, "0", "float");
+            Translator._applyCastedAssign(RESULT, "(float)", e);
          :}
          |
          ID:id ASSIGN expr:e
