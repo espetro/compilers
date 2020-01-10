@@ -4,7 +4,7 @@ import java.util.*;
 
 // %%
 
-terminal ASSIGN, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET;
+terminal ASSIGN, COMMA, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET;
 terminal PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal INT, FLOAT, INT_CAST, FLOAT_CAST;
 terminal EQ, NEQ, LT, GT, LE, GE;
@@ -15,7 +15,7 @@ terminal String ID, INUMBER, FNUMBER;
 
 nonterminal statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
 nonterminal vartype, var_declare;
-nonterminal String expr;
+nonterminal String expr, array_init, init_list;
 nonterminal Condition cond, logical;
 
 // lowest priority
@@ -68,9 +68,44 @@ vartype ::= INT
 var_declare ::= ID:id
                 {: Variables.declareVar(id, "0"); :}
                 |
-                ID:id LBRACKET INUMBER:n RBRACKET
-                {: Variables.declareVar(id, n); :}
+                ID:id LBRACKET INUMBER:n RBRACKET array_init:arr
+                {:
+                    Variables.declareVar(id, n);
+                    String[] init_list = arr.split(",");
+                    int m = Integer.parseInt(n);
+
+                    if (!(init_list[0] == "")) { // only if array_init is empty in CUP
+                        if (m == init_list.length) {
+                            String t0 = Translator.getNewTmpVar(), t1 = Translator.getNewTmpVar();
+                            // Variables.declareTempVar(t0, "0", "int");
+                            // Variables.declareTempVar(t1, "0", "int");
+                            for(int i = 0; i < m; i++) {
+                                String _t0 = String.format("%s[%s]", t0, i);
+                                String _id = String.format("%s[%s]", id, i);
+                                Translator._applyAssign(_t0, init_list[i]);
+                                Translator._applyAssign(t1, _t0);
+                                Translator._applyAssign(_id, t1);
+                            }
+                        } else {
+                            Translator._errorTrace("CUP Error: var_declare");
+                        }
+                    }
+                :}
                 ;
+
+array_init ::= ASSIGN LCURLY init_list:ls RCURLY
+               {: RESULT = ls; :}
+               |
+               // empty - at least the init list has length 1 (so we can check [0])
+               {: RESULT = ""; :}
+               ;
+
+init_list ::= init_list:ls COMMA expr:e
+              {: RESULT = ls + "," + e; :}
+              |
+              expr:e
+              {: RESULT = e; :}
+              ;
 
 // ================================================================
 // ======================= IF STATEMENT ===========================
