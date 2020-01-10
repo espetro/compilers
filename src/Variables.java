@@ -53,4 +53,8 @@ public class Variables {
     public static String getType(String id) {
         return variables.get(id).type;
     }
+
+    public static int getSize(String id) {
+        return variables.get(id).size;
+    }
 }

@@ -109,6 +109,15 @@ public class Translator {
         return ident;
     }
 
+    public static String assignment2Array(String ident, String size, String expr) {
+        // Also checks if the size is OK
+        String _ident = String.format("%s[%s]", ident, size);
+        _applyAssign(_ident, expr);
+
+        return ident;
+    }
+
+
     public static Condition comparison(String e1, int op, String e2, boolean perm) {
         Condition tag = new Condition();
         String cond = String.format("%s %s %s", e1, comp_operators[op], e2);

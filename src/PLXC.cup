@@ -4,7 +4,7 @@ import java.util.*;
 
 // %%
 
-terminal ASSIGN, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
+terminal ASSIGN, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET;
 terminal PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal INT, FLOAT, INT_CAST, FLOAT_CAST;
 terminal EQ, NEQ, LT, GT, LE, GE;
@@ -67,6 +67,9 @@ vartype ::= INT
 
 var_declare ::= ID:id
                 {: Variables.declareVar(id, "0"); :}
+                |
+                ID:id LBRACKET INUMBER:n RBRACKET
+                {: Variables.declareVar(id, n); :}
                 ;
 
 // ================================================================
@@ -177,10 +180,28 @@ expr ::= expr:e1 PLUS expr:e2
          ID:id ASSIGN expr:e
          {: RESULT = Translator.assignment(id, e); :}
          |
+         ID:id LBRACKET INUMBER:n RBRACKET ASSIGN expr:e
+         {:
+            int m = Integer.parseInt(n);
+            if (m >= Variables.getSize(id)) { Translator._errorTrace("CUP Error: ArrayIndexOutOfBoundsException (1)"); }
+            RESULT = Translator.assignment2Array(id, n, e);
+         :}
+         |
          ID:id
          {:
             if(!Translator.isValid(id)) { Translator._errorTrace("CUP Error: Variable no declarada"); }
             RESULT = id;
+         :}
+         |
+         ID:id LBRACKET INUMBER:n RBRACKET
+         {:
+            int m = Integer.parseInt(n);
+            if (m >= Variables.getSize(id)) { Translator._errorTrace("CUP Error: ArrayIndexOutOfBoundsException (2)"); }
+
+            String _id = String.format("%s[%s]", id, n);
+            RESULT = Translator.getNewTmpVar();
+            Variables.declareTempVar(RESULT, "0", "int");
+            Translator._applyAssign(RESULT, _id);
          :}
          |
          INUMBER:n

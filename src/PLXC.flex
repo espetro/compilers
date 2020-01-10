@@ -47,6 +47,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 ")" { return symbol(sym.RPAREN); }
 "{" { return symbol(sym.LCURLY); }
 "}" { return symbol(sym.RCURLY); }
+"[" { return symbol(sym.LBRACKET); }
+"]" { return symbol(sym.RBRACKET); }
 
 "+" { return symbol(sym.PLUS); }
 "-" { return symbol(sym.MINUS); }
