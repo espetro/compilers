@@ -61,7 +61,7 @@ public class Translator {
 
     public static String arithmetic(String e1, String op, String e2) {
         String temp_type = "int";
-        // If the expression types are different, a cast is needed. If at least one is Float, change the OP.
+        // If at least one is Float, change the OP and TMP type.
         if (isFloat(e1)) {
             op += "r";
             temp_type = "float";
@@ -71,6 +71,7 @@ public class Translator {
                 e2 = t0;
             }
         }
+        // If the expression types are different, the int type is casted to float
         else if (isFloat(e2)) {
             op += "r";
             temp_type = "float";

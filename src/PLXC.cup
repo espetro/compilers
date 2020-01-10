@@ -23,6 +23,7 @@ precedence left IF;
 precedence right ASSIGN;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
+precedence right INT_CAST, FLOAT_CAST;
 precedence left UMINUS; // there's nothing at left of UMINUS
 precedence left AND, OR;
 precedence left ELSE;
@@ -158,6 +159,20 @@ expr ::= expr:e1 PLUS expr:e2
          |
          LPAREN expr:e RPAREN
          {: RESULT = e; :}
+         |
+         INT_CAST expr:e
+         {:
+            String t0 = Translator.getNewTmpVar();
+            Variables.declareTempVar(t0, "0", "int");
+            RESULT = Translator.assignment(t0, e);
+         :}
+         |
+         FLOAT_CAST expr:e
+         {:
+            String t0 = Translator.getNewTmpVar();
+            Variables.declareTempVar(t0, "0", "float");
+            RESULT = Translator.assignment(t0, e);
+         :}
          |
          ID:id ASSIGN expr:e
          {: RESULT = Translator.assignment(id, e); :}
