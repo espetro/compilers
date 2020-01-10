@@ -1,97 +1,124 @@
 import java.io.PrintStream;
-import java.util.Arrays;
-
 
 /**
  * This class allows to apply and modify the control logic behind
  * intermediate code generation. It allows to convert from PL subset to Three-Address Code.
  */
 public class Translator {
-    private static int tmpVarCount, labelCount;
-    private static int elseCount, forCount, whileCount, doWhileCount;
+    private static int tmpVarCount = 0, labelCount = 0;
     protected static PrintStream out, err;
-    protected static String tab;
+    public static PrintStream logging = System.out;
 
     // Comparison states
-    public static final int GT = 0;
-    public static final int LT = 1;
-    public static final int EQ = 2;
-    public static final int GE = 3;
-    public static final int LE = 4;
-    public static final int NEQ = 5;
-    public static final String[] comps = {">", "<", "==", ">=", "<=", "!="};
+    public static final String comp_operators[] = {"<", "=="};
+    public static final int LT = 0;
+    public static final int EQ = 1;
 
-    // Logical constants
-    public static final int TRUE = 10;
-    public static final int FALSE = 11;
-
-    /**
-     *
-     * @param stream
-     * @param err_stream
-     * @param isTabbed if true, it uses tabs to make code blocks, along with 'L0:' label style
-     */
-    public Translator(PrintStream stream, PrintStream err_stream, boolean isTabbed) {
-        out = stream;
-        err = err_stream;
-        tmpVarCount = labelCount = 0;
-        elseCount = forCount = whileCount = doWhileCount = 0;
-        tab = isTabbed ? "\t" : "";
-    }
-
-    // Creates a new temporary variable
-    public static String getNewTmpVar() {
-        return "t" + tmpVarCount++;
-    }
-
-    // Creates a new label
+    public static String getNewTmpVar() { return "t" + tmpVarCount++; }
     public static String getNewLabel() {
         return "L" + labelCount++;
     }
 
-    public static String getNewFor() { return String.valueOf(forCount++); }
+    private static boolean isTemporal(String id) { return id.matches("t[0-9]+"); }
+    private static boolean isVariable(String str) { return str.matches("[a-zA-Z][a-zA-Z0-9_]*") || isTemporal(str); }
+    private static boolean isIntConst(String str) { return str.matches("0|[1-9][0-9]*"); }
+    private static boolean isFloatConst(String str) { return !isIntConst(str) && !isVariable(str); }
 
-    public static String getNewElse() { return String.valueOf(elseCount++); }
+    public static boolean isValid(String str) {
+        // An expression is valid if it's either (constant, temporal, declared variable).
+        logging.println("Checking if variable " + str + " is valid.");
+        if(isVariable(str)) {
+            return Variables.isDeclared(str);
+        } else {
+            return true;
+        }
+    }
 
-    public static String getNewWhile() { return String.valueOf(whileCount++); }
+    public static boolean isInt(String str) {
+        // An expr is int if it's an int constant or an int variable
+        if (isIntConst(str)) {
+            return true;
+        } else if (isVariable(str)) { // done not to get float const into this
+            return Variables.getType(str) == "int";
+        } else {
+            return false;
+        }
+    }
 
-    public static String getNewDoWhile() { return String.valueOf(doWhileCount++); }
+    public static boolean isFloat(String str) {
+        // An expr is float if it's a float constant or a float variable
+        if (isFloatConst(str)) {
+            return true;
+        } else if (isVariable(str)) { // done not to get int const into this
+            return Variables.getType(str) == "float";
+        } else {
+            return false;
+        }
+    }
 
     // ===================================================================
     // ===================== NON-TERMINAL GENERATORS =====================
 
     public static String arithmetic(String e1, String op, String e2) {
+        String temp_type = "int";
+        // If the expression types are different, a cast is needed. If at least one is Float, change the OP.
+        if (isFloat(e1)) {
+            op += "r";
+            temp_type = "float";
+            if (isInt(e2)) {
+                String t0 = getNewTmpVar();
+                _applyCastedAssign(t0, "(float)", e2);
+                e2 = t0;
+            }
+        }
+        else if (isFloat(e2)) {
+            op += "r";
+            temp_type = "float";
+            if (isInt(e1)) {
+                String t0 = getNewTmpVar();
+                _applyCastedAssign(t0, "(float)", e1);
+                e1 = t0;
+            }
+        }
+
         String tmp = getNewTmpVar();
-        _applyOp(e1, op, e2, tmp);
+        Variables.declareTempVar(tmp, "0", temp_type);
+
+        _applyOp(tmp, e1, op, e2);
         return tmp;
     }
 
-    /**
-     * Logs an IF statement. Comparison statements are only associated with conditional statements (IFs)
-     * @param e1
-     * @param comp
-     * @param e2 Can be null if 'comp' is equal to TRUE or FALSE token
-     * @return
-     */
-    public static Condition comparison(String e1, int comp, String e2) {
-        Condition tag = new Condition();
-
-        boolean checkAbsolute = comp == Translator.TRUE || comp == Translator.FALSE;
-        String txt = checkAbsolute ? e1 : _applyCond(e1, comp, e2);
-
-        _if(txt, tag.TrueLabel(), tag.FalseLabel());
-        return tag;
-    }
-
     public static String assignment(String ident, String expr) {
-        out.println(String.format("%s = %s;", ident, expr));
+        // Case 1: INT = FLOAT => INT = (INT) FLOAT
+        if (isInt(ident) && isFloat(expr)) {
+            _applyCastedAssign(ident, "(int)", expr);
+        }
+        // Case 2: FLOAT = INT => FLOAT = (FLOAT) INT
+        else if (isFloat(ident) && isInt(expr)) {
+            _applyCastedAssign(ident, "(float)", expr);
+        }
+        // Otherwise: no casting
+        else {
+            _applyAssign(ident, expr);
+        }
         return ident;
     }
 
-    public static String logical() {
-        return "";
+    public static Condition comparison(String e1, int op, String e2, boolean perm) {
+        Condition tag = new Condition();
+        String cond = String.format("%s %s %s", e1, comp_operators[op], e2);
+
+        if(perm) {
+            _if(cond, tag.FalseLabel(), tag.TrueLabel());
+        } else {
+            _if(cond, tag.TrueLabel(), tag.FalseLabel());
+        }
+        return tag;
     }
 
+    public static void print(String exp) {
+        out.println(String.format("print %s;", exp));
+    }
 
     // ===================================================================
     // ===================== DEFAULT MESSAGES ============================
@@ -104,24 +131,15 @@ public class Translator {
         out.println(String.format("label %s;", label));
     }
 
-    /**
-     * Applies a conditional statement
-     * @param c1
-     * @param comp
-     * @param c2
-     */
-    public static String _applyCond(String c1, int comp, String c2) {
-        return String.format("%s %s %s", c1, comps[comp], c2);
+    public static void _applyCastedAssign(String a, String cast, String b) {
+        out.println(String.format("%s = %s %s;", a, cast, b));
     }
 
-    /**
-     * Applies an arithmetic statement
-     * @param e1
-     * @param op
-     * @param e2
-     * @param assignTo
-     */
-    public static void _applyOp(String e1, String op, String e2, String assignTo) {
+    public static void _applyAssign(String a, String b) {
+        out.println(String.format("%s = %s;", a, b));
+    }
+
+    public static void _applyOp(String assignTo, String e1, String op, String e2) {
         out.println(String.format("%s = %s %s %s;", assignTo, e1, op, e2));
     }
 
@@ -130,16 +148,9 @@ public class Translator {
         out.println(String.format("goto %s;", lFalse));
     }
 
-    public static void _print(String txt) {
-        out.println(String.format("print %s;", txt));
-    }
-
-    public static void _errorDefault() {
-        err.print("Error;");
-    }
-
-    public static void _errorInstr(String tokens) {
-        err.println(String.format("Error: code generation failed with arguments: %s", tokens));
+    public static void _errorTrace(String info) {
+        err.println("error;");
+        err.println(String.format("# %s", info));
     }
 
     public static void _halt() {
