@@ -57,7 +57,7 @@ public class Variables {
     }
 
     public static boolean isArray(String id) {
-        Attributes def = new Attributes("int", 0, -1);
+        Attributes def = new Attributes("none", 0, -1);
         // return variables.getOrDefault(id, def).size > 0;
         if(!variables.containsKey(id)) {
             Translator.logging.println("Variables Error: Variable " + id + " no declarada");
@@ -69,10 +69,12 @@ public class Variables {
     }
 
     public static String getType(String id) {
-        return variables.get(id).type;
+        Attributes def = new Attributes("none", -1, -1);
+        return variables.getOrDefault(id, def).type;
     }
 
     public static int getSize(String id) {
-        return variables.get(id).size;
+        Attributes def = new Attributes("none", -1, -1);
+        return variables.getOrDefault(id, def).size;
     }
 }

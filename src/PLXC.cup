@@ -79,10 +79,15 @@ var_declare ::= ID:id
 
                     if (!(init_list[0] == "")) { // only if array_init is empty in CUP
                         if (m == init_list.length) { // at declaration, lengths have to be strictly the same
+                            String arr_type = Variables.getType(id);
                             String t0 = Translator.getNewTmpVar(), t1 = Translator.getNewTmpVar();
                             // Variables.declareTempVar(t0, "0", "int");
                             // Variables.declareTempVar(t1, "0", "int");
                             for(int i = 0; i < init_list.length; i++) {
+                                if(arr_type != Translator.getType(init_list[i])) {
+                                    Translator._errorTrace("CUP Error: error de tipos (TYPE ID = { ... }");
+                                }
+
                                 String _t0 = String.format("%s[%s]", t0, i);
                                 String _id = String.format("%s[%s]", id, i);
                                 Translator._applyAssign(_t0, init_list[i]);
@@ -221,7 +226,9 @@ expr ::= expr:e1 PLUS expr:e2
 
             if (Variables.isArray(id) && Variables.isVariable(e) && Variables.isArray(e)) {
                 // ============= COPY ARRAY =============
-                if (Variables.getSize(id) >= Variables.getSize(e)) {
+                boolean validSize = Variables.getSize(id) >= Variables.getSize(e);
+                boolean validType = Variables.getType(id) == Variables.getType(e);
+                if (validSize && validType) {
                     String t0 = Translator.getNewTmpVar();
                     int len = Variables.getSize(e);
                     for(int i = 0; i < len; i++) {
@@ -230,7 +237,8 @@ expr ::= expr:e1 PLUS expr:e2
                         Translator._applyAssign(_id, t0);
                     }
                 } else {
-                    Translator._errorTrace("CUP Error: Las matrices no son compatibles");
+                    if(!validType) { Translator._errorTrace("CUP Error: Las matrices no son compatibles en tipo"); }
+                    else { Translator._errorTrace("CUP Error: Las matrices no son compatibles en espacio"); }
                 }
             } else {
                 Translator.assignment(id, e);
@@ -246,12 +254,16 @@ expr ::= expr:e1 PLUS expr:e2
             String[] init_list = ls.split(",");
             int m = Variables.getSize(id);
 
-            if (!(init_list[0] == "")) { // only if array_init is empty in CUP
+            if (init_list[0] != "") { // only if array_init is empty in CUP
                 if (m >= init_list.length) {
+                    String arr_type = Variables.getType(id);
                     String t0 = Translator.getNewTmpVar(), t1 = Translator.getNewTmpVar();
                     // Variables.declareTempVar(t0, "0", "int");
                     // Variables.declareTempVar(t1, "0", "int");
                     for(int i = 0; i < init_list.length; i++) {
+                        if(arr_type != Translator.getType(init_list[i])) {
+                            Translator._errorTrace("CUP Error: error de tipos (ID = { ... }");
+                        }
                         String _t0 = String.format("%s[%s]", t0, i);
                         String _id = String.format("%s[%s]", id, i);
                         Translator._applyAssign(_t0, init_list[i]);
@@ -275,6 +287,10 @@ expr ::= expr:e1 PLUS expr:e2
                 int m = Integer.parseInt(e1);
                 if (m >= Variables.getSize(id)) { Translator._errorTrace("CUP Error: ArrayIndexOutOfBoundsException (1)"); }
             } else {
+                // IF ASSIGNMENT TYPES ARE NOT THE SAME
+                if (Variables.getType(id) != Translator.getType(e2)) {
+                    Translator._errorTrace("CUP Error: error de tipos (ID[..] = ...)");
+                }
                 Condition _rangeCheck = new Condition();
                 String o1 = String.format("%s < 0", e1),
                        o2 = String.format("%s < %s", Variables.getSize(id), e1),
@@ -327,8 +343,10 @@ expr ::= expr:e1 PLUS expr:e2
             }
 
             String _id = String.format("%s[%s]", id, e);
+            String _id_type = Variables.getType(id);
             RESULT = Translator.getNewTmpVar();
-            Variables.declareTempVar(RESULT, "0", "int");
+
+            Variables.declareTempVar(RESULT, "0", _id_type);
             Translator._applyAssign(RESULT, _id);
          :}
          |

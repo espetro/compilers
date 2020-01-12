@@ -21,12 +21,13 @@ public class Translator {
 
     private static boolean isTemporal(String id) { return id.matches("t[0-9]+"); }
     private static boolean isVariable(String str) { return str.matches("[a-zA-Z][a-zA-Z0-9_]*") || isTemporal(str); }
+    private static boolean isArrayElement(String str) { return str.matches("[a-zA-Z]\\[[a-zA-Z0-9_]+\\]"); }
     public static boolean isIntConst(String str) { return str.matches("0|[1-9][0-9]*"); }
     private static boolean isFloatConst(String str) { return !isIntConst(str) && !isVariable(str); }
 
     public static boolean isValid(String str) {
         // An expression is valid if it's either (constant, temporal, declared variable).
-        logging.println("Checking if variable " + str + " is valid.");
+        // logging.println("Checking if variable " + str + " is valid.");
         if(isVariable(str)) {
             return Variables.isDeclared(str);
         } else {
@@ -35,22 +36,28 @@ public class Translator {
     }
 
     public static boolean isInt(String str) {
-        // An expr is int if it's an int constant or an int variable
+        // An expr is int if it's an int constant or an int variable (this also checks for x[i] expressions)
         if (isIntConst(str)) {
             return true;
         } else if (isVariable(str)) { // done not to get float const into this
             return Variables.getType(str) == "int";
+        } else if (isArrayElement(str)) {
+            return Variables.getType(String.valueOf(str.charAt(0))) == "float";
         } else {
             return false;
         }
     }
 
     public static boolean isFloat(String str) {
-        // An expr is float if it's a float constant or a float variable
+        // An expr is float if it's a float constant or a float variable (this also checks for x[i] expressions)
         if (isFloatConst(str)) {
             return true;
         } else if (isVariable(str)) { // done not to get int const into this
+            logging.println("isFloat " + str + " ?");
             return Variables.getType(str) == "float";
+        } else if (isArrayElement(str)) { // THIS IS ACTUALLY NOT NEEDED - I WASNT DOING A NICE CHECK ON expr: ID[..]
+            logging.println("isFloat " + str + " ?");
+            return Variables.getType(Character.toString(str.charAt(0))) == "float";
         } else {
             return false;
         }
@@ -59,7 +66,12 @@ public class Translator {
     // ===================================================================
     // ===================== NON-TERMINAL GENERATORS =====================
 
+    public static String getType(String cnst) {
+        return isInt(cnst) ? "int" : "float";
+    }
+
     public static String arithmetic(String e1, String op, String e2) {
+        // ====  HERE I DONT CHECK IF e1 OR e2 ARE ELEMENTS OF AN ARRAY => isFloat/isInt CANNOT DETECT THAT ====
         String temp_type = "int";
         // If at least one is Float, change the OP and TMP type.
         if (isFloat(e1)) {
@@ -110,8 +122,22 @@ public class Translator {
     }
 
     public static String assignment2Array(String ident, String size, String expr) {
-        // Also checks if the size is OK
+        String varID = String.valueOf(ident.charAt(0));
         String _ident = String.format("%s[%s]", ident, size);
+
+        // Case 1: INT = FLOAT => INT = (INT) FLOAT
+        if (isInt(varID) && isFloat(expr)) {
+            String t0 = getNewTmpVar();
+            _applyCastedAssign(t0, "(int)", expr);
+            expr = t0;
+        }
+        // Case 2: FLOAT = INT => FLOAT = (FLOAT) INT
+        else if (isFloat(varID) && isInt(expr)) {
+            String t0 = getNewTmpVar();
+            _applyCastedAssign(t0, "(float)", expr);
+            expr = t0;
+        }
+        // Otherwise
         _applyAssign(_ident, expr);
 
         return ident;
