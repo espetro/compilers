@@ -21,7 +21,7 @@ public class Translator {
 
     private static boolean isTemporal(String id) { return id.matches("t[0-9]+"); }
     private static boolean isVariable(String str) { return str.matches("[a-zA-Z][a-zA-Z0-9_]*") || isTemporal(str); }
-    private static boolean isIntConst(String str) { return str.matches("0|[1-9][0-9]*"); }
+    public static boolean isIntConst(String str) { return str.matches("0|[1-9][0-9]*"); }
     private static boolean isFloatConst(String str) { return !isIntConst(str) && !isVariable(str); }
 
     public static boolean isValid(String str) {
@@ -109,6 +109,10 @@ public class Translator {
         return ident;
     }
 
+    public static String copyArray(String idA, String idB) {
+        return idA;
+    }
+
     public static String assignment2Array(String ident, String size, String expr) {
         // Also checks if the size is OK
         String _ident = String.format("%s[%s]", ident, size);
@@ -123,9 +127,9 @@ public class Translator {
         String cond = String.format("%s %s %s", e1, comp_operators[op], e2);
 
         if(perm) {
-            _if(cond, tag.FalseLabel(), tag.TrueLabel());
+            _if_else(cond, tag.FalseLabel(), tag.TrueLabel());
         } else {
-            _if(cond, tag.TrueLabel(), tag.FalseLabel());
+            _if_else(cond, tag.TrueLabel(), tag.FalseLabel());
         }
         return tag;
     }
@@ -157,15 +161,31 @@ public class Translator {
         out.println(String.format("%s = %s %s %s;", assignTo, e1, op, e2));
     }
 
-    public static void _if(String cond, String lTrue, String lFalse) {
+    public static void _if_else(String cond, String lTrue, String lFalse) {
         out.println(String.format("if (%s) goto %s;", cond, lTrue));
         out.println(String.format("goto %s;", lFalse));
     }
 
+    public static void _if(String cond, String lTrue) {
+        out.println(String.format("if (%s) goto %s;", cond, lTrue));
+    }
+
+    public static void _else(String lFalse) {
+        out.println(String.format("goto %s;", lFalse));
+    }
+
     public static void _errorTrace(String info) {
-        err.println("error;");
-        err.println(String.format("# %s", info));
+        String out = "error;\n" + String.format("# %s", info);
+        err.println(out);
+        logging.println(out);
         System.exit(0);
+    }
+
+    public static void _error() {
+        err.println("error;");
+    }
+    public static void _comment(String info) {
+        out.println("# " + info);
     }
 
     public static void _halt() {

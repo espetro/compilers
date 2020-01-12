@@ -1,0 +1,35 @@
+i = 0;
+label L0;
+if (i < 5) goto L2;
+goto L3;
+label L1;
+t0 = i + 1;
+i = t0;
+goto L0;
+label L2;
+t1 = i + i;
+t2 = t1 / 2;
+t3 = i * i;
+# Comprobacion de rango
+if (t2 < 0) goto L4;
+if (3 < t2) goto L4;
+if (3 == t2) goto L4;
+goto L5;
+label L4;
+error;
+halt;
+label L5;
+a[t2] = t3;
+# Comprobacion de rango
+if (i < 0) goto L6;
+if (3 < i) goto L6;
+if (3 == i) goto L6;
+goto L7;
+label L6;
+error;
+halt;
+label L7;
+t4 = a[i];
+print t4;
+goto L1;
+label L3;

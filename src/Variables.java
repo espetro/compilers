@@ -46,8 +46,15 @@ public class Variables {
         variables.put(id, new Attributes(currentType,0, sz));
     }
 
+    private static boolean isTemporal(String id) { return id.matches("t[0-9]+"); }
+    public static boolean isVariable(String str) { return str.matches("[a-zA-Z][a-zA-Z0-9_]*") || isTemporal(str); }
+
     public static boolean isDeclared(String id) {
         return variables.containsKey(id);
+    }
+
+    public static boolean isArray(String id) {
+        return variables.get(id).size > 0;
     }
 
     public static String getType(String id) {

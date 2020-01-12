@@ -1,0 +1,46 @@
+suma = 0;
+i = 0;
+label L0;
+if (i < 10) goto L2;
+goto L3;
+label L1;
+t0 = i + 1;
+i = t0;
+goto L0;
+label L2;
+# Comprobacion de rango
+if (i < 0) goto L4;
+if (10 < i) goto L4;
+if (10 == i) goto L4;
+goto L5;
+label L4;
+error;
+halt;
+label L5;
+a[i] = i;
+# Comprobacion de rango
+if (i < 0) goto L6;
+if (10 < i) goto L6;
+if (10 == i) goto L6;
+goto L7;
+label L6;
+error;
+halt;
+label L7;
+t1 = a[i];
+# Comprobacion de rango
+if (i < 0) goto L8;
+if (10 < i) goto L8;
+if (10 == i) goto L8;
+goto L9;
+label L8;
+error;
+halt;
+label L9;
+t2 = a[i];
+t3 = t1 * t2;
+t4 = suma + t3;
+suma = t4;
+goto L1;
+label L3;
+print suma;

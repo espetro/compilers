@@ -56,6 +56,9 @@ stmt ::= vartype var_declare SEMI
          |
          LCURLY statement_list RCURLY
          {: /* done in the inner statement list */ :}
+         |
+         error SEMI
+         {: Translator._errorTrace("CUP Error: Sintaxis no correcta"); :}
          ;
 
 vartype ::= INT
@@ -75,11 +78,11 @@ var_declare ::= ID:id
                     int m = Integer.parseInt(n);
 
                     if (!(init_list[0] == "")) { // only if array_init is empty in CUP
-                        if (m == init_list.length) {
+                        if (m == init_list.length) { // at declaration, lengths have to be strictly the same
                             String t0 = Translator.getNewTmpVar(), t1 = Translator.getNewTmpVar();
                             // Variables.declareTempVar(t0, "0", "int");
                             // Variables.declareTempVar(t1, "0", "int");
-                            for(int i = 0; i < m; i++) {
+                            for(int i = 0; i < init_list.length; i++) {
                                 String _t0 = String.format("%s[%s]", t0, i);
                                 String _id = String.format("%s[%s]", id, i);
                                 Translator._applyAssign(_t0, init_list[i]);
@@ -213,13 +216,68 @@ expr ::= expr:e1 PLUS expr:e2
          :}
          |
          ID:id ASSIGN expr:e
-         {: RESULT = Translator.assignment(id, e); :}
-         |
-         ID:id LBRACKET INUMBER:n RBRACKET ASSIGN expr:e
          {:
-            int m = Integer.parseInt(n);
-            if (m >= Variables.getSize(id)) { Translator._errorTrace("CUP Error: ArrayIndexOutOfBoundsException (1)"); }
-            RESULT = Translator.assignment2Array(id, n, e);
+            if(!Translator.isValid(id)) { Translator._errorTrace("CUP Error: Variable no declarada"); }
+
+            if (Variables.isArray(id) && Variables.isVariable(e) && Variables.isArray(e)) {
+                RESULT = Translator.copyArray(id, e);
+            } else {
+                RESULT = Translator.assignment(id, e);
+            }
+         :}
+         |
+         ID:id ASSIGN LCURLY init_list:ls RCURLY
+         {:
+            if(!Translator.isValid(id)) { Translator._errorTrace("CUP Error: Variable no declarada"); }
+
+            String[] init_list = ls.split(",");
+            int m = Variables.getSize(id);
+
+            if (!(init_list[0] == "")) { // only if array_init is empty in CUP
+                if (m >= init_list.length) {
+                    String t0 = Translator.getNewTmpVar(), t1 = Translator.getNewTmpVar();
+                    // Variables.declareTempVar(t0, "0", "int");
+                    // Variables.declareTempVar(t1, "0", "int");
+                    for(int i = 0; i < init_list.length; i++) {
+                        String _t0 = String.format("%s[%s]", t0, i);
+                        String _id = String.format("%s[%s]", id, i);
+                        Translator._applyAssign(_t0, init_list[i]);
+                        Translator._applyAssign(t1, _t0);
+                        Translator._applyAssign(_id, t1);
+                    }
+                } else {
+                    Translator._errorTrace("CUP Error: ID = { init_list } ");
+                }
+            }
+         :}
+         |
+         ID:id LBRACKET expr:e1 RBRACKET ASSIGN expr:e2
+         {:
+            if(!Translator.isValid(id)) { Translator._errorTrace("CUP Error: Variable no declarada"); }
+
+            // As expr can also be an INUMBER, check it
+            if (Translator.isIntConst(e1)) {
+                int m = Integer.parseInt(e1);
+                if (m >= Variables.getSize(id)) { Translator._errorTrace("CUP Error: ArrayIndexOutOfBoundsException (1)"); }
+            } else {
+                Condition _rangeCheck = new Condition();
+                String o1 = String.format("%s < 0", e1),
+                       o2 = String.format("%s < %s", Variables.getSize(id), e1),
+                       o3 = String.format("%s == %s", Variables.getSize(id), e1);
+
+                Translator._comment("Comprobacion de rango");
+                Translator._if(o1, _rangeCheck.TrueLabel());
+                Translator._if(o2, _rangeCheck.TrueLabel());
+                Translator._if(o3, _rangeCheck.TrueLabel());
+                Translator._goto(_rangeCheck.FalseLabel());
+
+                Translator._label(_rangeCheck.TrueLabel());
+                Translator._error();
+                Translator._halt();
+                Translator._label(_rangeCheck.FalseLabel());
+            }
+
+            RESULT = Translator.assignment2Array(id, e1, e2);
          :}
          |
          ID:id
@@ -228,12 +286,32 @@ expr ::= expr:e1 PLUS expr:e2
             RESULT = id;
          :}
          |
-         ID:id LBRACKET INUMBER:n RBRACKET
+         ID:id LBRACKET expr:e RBRACKET
          {:
-            int m = Integer.parseInt(n);
-            if (m >= Variables.getSize(id)) { Translator._errorTrace("CUP Error: ArrayIndexOutOfBoundsException (2)"); }
+            if(!Translator.isValid(id)) { Translator._errorTrace("CUP Error: Variable no declarada"); }
 
-            String _id = String.format("%s[%s]", id, n);
+            if(Translator.isIntConst(e)) {
+                int m = Integer.parseInt(e);
+                if (m >= Variables.getSize(id)) { Translator._errorTrace("CUP Error: ArrayIndexOutOfBoundsException (2)"); }
+            } else {
+                Condition _rangeCheck = new Condition();
+                String o1 = String.format("%s < 0", e),
+                       o2 = String.format("%s < %s", Variables.getSize(id), e),
+                       o3 = String.format("%s == %s", Variables.getSize(id), e);
+
+                Translator._comment("Comprobacion de rango");
+                Translator._if(o1, _rangeCheck.TrueLabel());
+                Translator._if(o2, _rangeCheck.TrueLabel());
+                Translator._if(o3, _rangeCheck.TrueLabel());
+                Translator._goto(_rangeCheck.FalseLabel());
+
+                Translator._label(_rangeCheck.TrueLabel());
+                Translator._error();
+                Translator._halt();
+                Translator._label(_rangeCheck.FalseLabel());
+            }
+
+            String _id = String.format("%s[%s]", id, e);
             RESULT = Translator.getNewTmpVar();
             Variables.declareTempVar(RESULT, "0", "int");
             Translator._applyAssign(RESULT, _id);
