@@ -47,14 +47,25 @@ public class Variables {
     }
 
     private static boolean isTemporal(String id) { return id.matches("t[0-9]+"); }
-    public static boolean isVariable(String str) { return str.matches("[a-zA-Z][a-zA-Z0-9_]*") || isTemporal(str); }
+    public static boolean isVariable(String str) {
+        // Translator.logging.println("isVariable " + str);
+        return str.matches("[a-zA-Z][a-zA-Z0-9_]*") || isTemporal(str);
+    }
 
     public static boolean isDeclared(String id) {
         return variables.containsKey(id);
     }
 
     public static boolean isArray(String id) {
-        return variables.get(id).size > 0;
+        Attributes def = new Attributes("int", 0, -1);
+        // return variables.getOrDefault(id, def).size > 0;
+        if(!variables.containsKey(id)) {
+            Translator.logging.println("Variables Error: Variable " + id + " no declarada");
+            return false;
+        } else {
+            // Translator.logging.println(id + " es un array declarado");
+            return variables.getOrDefault(id, def).size > 0;
+        }
     }
 
     public static String getType(String id) {

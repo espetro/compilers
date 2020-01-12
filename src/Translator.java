@@ -109,10 +109,6 @@ public class Translator {
         return ident;
     }
 
-    public static String copyArray(String idA, String idB) {
-        return idA;
-    }
-
     public static String assignment2Array(String ident, String size, String expr) {
         // Also checks if the size is OK
         String _ident = String.format("%s[%s]", ident, size);
