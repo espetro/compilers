@@ -21,7 +21,7 @@ public class Translator {
 
     private static boolean isTemporal(String id) { return id.matches("t[0-9]+"); }
     private static boolean isVariable(String str) { return str.matches("[a-zA-Z][a-zA-Z0-9_]*") || isTemporal(str); }
-    private static boolean isArrayElement(String str) { return str.matches("[a-zA-Z]\\[[a-zA-Z0-9_]+\\]"); }
+    public static boolean isArrayElement(String str) { return str.matches("[a-zA-Z]\\[[a-zA-Z0-9_]+\\]"); }
     public static boolean isIntConst(String str) { return str.matches("0|[1-9][0-9]*"); }
     private static boolean isFloatConst(String str) { return !isIntConst(str) && !isVariable(str); }
 
@@ -30,6 +30,9 @@ public class Translator {
         // logging.println("Checking if variable " + str + " is valid.");
         if(isVariable(str)) {
             return Variables.isDeclared(str);
+        } else if (isArrayElement(str)) {
+            String var = String.valueOf(str.charAt(0));
+            return Variables.isDeclared(var);
         } else {
             return true;
         }
@@ -66,8 +69,8 @@ public class Translator {
     // ===================================================================
     // ===================== NON-TERMINAL GENERATORS =====================
 
-    public static String getType(String cnst) {
-        return isInt(cnst) ? "int" : "float";
+    public static String getType(String str) {
+        return isInt(str) ? "int" : "float";
     }
 
     public static String arithmetic(String e1, String op, String e2) {

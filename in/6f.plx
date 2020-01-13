@@ -5,7 +5,7 @@ a[2] = 5;
 int b[3];
 int i;
 int x;
-for(i=0; i<3; i++) {
+for(i=0; i<3; i=i+1) {
     for b[i] in a do {
         x = x + b[i];
     }

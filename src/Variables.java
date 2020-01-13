@@ -3,6 +3,7 @@ import java.util.Map;
 
 class Attributes {
     public static enum Type {None, Int, Float};
+    protected String name;
     protected String type;
     protected int scope;
     protected int size;

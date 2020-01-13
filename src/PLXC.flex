@@ -69,6 +69,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "&&" { return symbol(sym.AND); }
 "||" { return symbol(sym.OR); }
 
+"in" { return symbol(sym.IN); }
+
 "int" { return symbol(sym.INT); }
 "float" { return symbol(sym.FLOAT); }
 "(int)" { return symbol(sym.INT_CAST); }

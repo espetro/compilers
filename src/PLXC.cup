@@ -4,7 +4,7 @@ import java.util.*;
 
 // %%
 
-terminal ASSIGN, COMMA, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET;
+terminal ASSIGN, COMMA, IN, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET;
 terminal PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal INT, FLOAT, INT_CAST, FLOAT_CAST;
 terminal EQ, NEQ, LT, GT, LE, GE;
@@ -15,8 +15,8 @@ terminal String ID, INUMBER, FNUMBER;
 
 nonterminal statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
 nonterminal vartype, var_declare;
-nonterminal String expr, array_init, init_list;
-nonterminal Condition cond, logical;
+nonterminal String expr, array_init, init_list, for_in_iter, for_in_arr;
+nonterminal Condition cond, logical, for_in_stmt;
 
 // lowest priority
 precedence left IF;
@@ -46,6 +46,8 @@ stmt ::= vartype var_declare SEMI
          if_stmt
          |
          for_stmt
+         |
+         for_in_stmt
          |
          do_while_stmt
          |
@@ -184,6 +186,83 @@ for_stmt ::= FOR:forLabel LPAREN expr SEMI
              ;
 
 
+
+for_in_stmt ::= FOR:forLabel for_in_iter:it IN for_in_arr:arr
+                {:
+                    if (Translator.isValid(it) && Translator.isValid(arr) && Variables.isArray(arr)) {
+                        String _it = Translator.isArrayElement(it) ? String.valueOf(it.charAt(0)) : it;
+                        if (Variables.getType(_it) == Variables.getType(arr)) {
+
+                            String _idx = Translator.getNewTmpVar();
+                            Variables.declareTempVar(_idx, "0", "int");
+                            Translator.assignment(_idx, "0");
+
+                            String _size = Translator.getNewTmpVar(), _arr_size = String.valueOf(Variables.getSize(arr));
+                            Variables.declareTempVar(_size, "0", "int");
+                            Translator.assignment(_size, _arr_size);
+
+                            Translator._label(forLabel.TrueLabel()); // The label for the loop
+                            RESULT = Translator.comparison(_idx, Translator.LT, _size, false);
+
+                            Translator._label(forLabel.FalseLabel());
+                            String t1 = Translator.arithmetic(_idx, "+", "1");
+                            Translator._applyAssign(_idx, t1);
+                            Translator._goto(forLabel.TrueLabel());
+
+                            Translator._label(RESULT.TrueLabel());
+                            String value = String.format("%s[%s]", arr, _idx);
+
+                            // HERE IS THE IMPORTANT ASSIGNMENT
+                            String t0 = Translator.getNewTmpVar(); // useful when using b[i] as it
+                            Variables.declareTempVar(t0, "0", Variables.getType(arr));
+                            Translator._applyAssign(t0, value);
+                            Translator._applyAssign(it, t0);
+
+                            // stmt
+                        } else {
+                            Translator._errorTrace("CUP Error: error de tipos (for_in_stmt)");
+                        }
+                    } else {
+                        String unsafeVar = Translator.isValid(it) ? "arr" : "it";
+                        Translator._errorTrace("CUP Error: Variable '" + unsafeVar + "' no valida (for_in_stmt)");
+                    }
+                :}
+                DO stmt
+                {:
+                    Translator._goto(forLabel.FalseLabel());
+                    Translator._label(RESULT.FalseLabel());
+                :}
+                ;
+
+for_in_iter ::= ID:id
+                {: RESULT = id; :}
+                |
+                ID:id LBRACKET expr:e RBRACKET
+                {: RESULT = String.format("%s[%s]", id, e); :}
+                ;
+
+for_in_arr ::= ID:id
+               {: RESULT = id; :}
+               |
+               LCURLY init_list:ls RCURLY
+               {:
+                  String[] arr = ls.split(",");
+                  String curr_type = Translator.getType(arr[0]);
+                  RESULT = Translator.getNewTmpVar();
+
+                  for (int i = 0; i < arr.length; i++) {
+                      if(curr_type != Translator.getType(arr[i])) {
+                          Translator._errorTrace("CUP Error: error de tipos (for_in_arr init_list)");
+                      }
+                      String _result = String.format("%s[%s]", RESULT, i);
+                      Translator._applyAssign(_result, arr[i]);
+                  }
+                  // Declares the variable as an array of type CURR_TYPE
+                  Variables.setCurrentType(curr_type);
+                  Variables.declareVar(RESULT, String.valueOf(arr.length));
+               :}
+               ;
+
 // ================================================================
 // ======================== ARITHMETIC OPS ========================
 
@@ -319,6 +398,9 @@ expr ::= expr:e1 PLUS expr:e2
          |
          ID:id LBRACKET expr:e RBRACKET
          {:
+            // ONE WAY IT'D BE TO DO THE TEMPORAL ASSIGN IN THE OPERATIONS THAT ONLY NEED IT
+            // eg in the FOR b[i] IN .. DO, we dont need it to be assigned to t2 => instead just return b[i]
+
             if(!Translator.isValid(id)) { Translator._errorTrace("CUP Error: Variable no declarada"); }
 
             if(Translator.isIntConst(e)) {
@@ -327,8 +409,8 @@ expr ::= expr:e1 PLUS expr:e2
             } else {
                 Condition _rangeCheck = new Condition();
                 String o1 = String.format("%s < 0", e),
-                       o2 = String.format("%s < %s", Variables.getSize(id), e),
-                       o3 = String.format("%s == %s", Variables.getSize(id), e);
+                       o2 = String.format("%d < %s", Variables.getSize(id), e),
+                       o3 = String.format("%d == %s", Variables.getSize(id), e);
 
                 Translator._comment("Comprobacion de rango");
                 Translator._if(o1, _rangeCheck.TrueLabel());
