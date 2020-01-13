@@ -1,0 +1,9 @@
+if (1 < 2) goto L1;
+goto L2;
+label L1;
+t0 = 3;
+goto L0;
+label L2;
+t0 = 4;
+label L0;
+print t0;

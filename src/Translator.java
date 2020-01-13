@@ -13,16 +13,21 @@ public class Translator {
     public static final int LT = 0;
     public static final int EQ = 1;
 
-    public static String getNewTmpVar() { return "t" + tmpVarCount++; }
     public static String getNewLabel() {
         return "L" + labelCount++;
+    }
+
+    public static String getNewTmpVar(String type) {
+        String tmp = "t" + tmpVarCount++;
+        Variables.declareTmpVar(tmp, "0", type);
+        return tmp;
     }
 
     // ===================================================================
     // ===================== NON-TERMINAL GENERATORS =====================
 
     public static String arithmetic(String e1, String op, String e2) {
-        String tmp = getNewTmpVar();
+        String tmp = getNewTmpVar("int");
         _applyOp(tmp, e1, op, e2);
         return tmp;
     }

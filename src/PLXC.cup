@@ -4,20 +4,21 @@ import java.util.*;
 
 // %%
 
-terminal ASSIGN, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
+terminal ASSIGN, INT, COLON, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
 terminal PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal NOT, OR, AND;
-terminal String IF, ELSE, DO, WHILE;
+terminal String IF, ELSE, DO, WHILE, QMARK;
 terminal Condition FOR;
 terminal String ID, NUMBER;
 
-nonterminal Object statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
-nonterminal String expr;
+nonterminal Object statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt, vardeclare, vartype;
+nonterminal String expr, ternary_op;
 nonterminal Condition cond, logical;
 
 // lowest priority
 precedence left IF;
+precedence left QMARK, COLON;
 precedence right ASSIGN;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
@@ -36,7 +37,9 @@ statement_list ::= statement_list stmt
                    stmt
                    ;
 
-stmt ::= expr SEMI
+stmt ::= vartype vardeclare SEMI
+         |
+         expr SEMI
          |
          if_stmt
          |
@@ -51,15 +54,21 @@ stmt ::= expr SEMI
          |
          LCURLY statement_list RCURLY
          {: /* done in the inner statement list */ :}
-         ;
-
-         /**
          |
          error:e SEMI // handles errors while parsing (not recommended)
-         {: :}
+         {: Translator._errorTrace("CUP Error: error de sintaxis"); :}
          ;
-         */
 
+// ================================================================
+// =================== VARIABLE DECLARATION =======================
+
+vartype ::= INT
+            {: Variables.setCurrentType("int"); :}
+            ;
+
+vardeclare ::= ID:id
+               {: Variables.declareVar(id, "0"); :}
+               ;
 // ================================================================
 // ======================= IF STATEMENT ===========================
 
@@ -151,15 +160,43 @@ expr ::= expr:e1 PLUS expr:e2
          LPAREN expr:e RPAREN
          {: RESULT = e; :}
          |
-         ID:i ASSIGN expr:e
-         {: RESULT = Translator.assignment(i, e); :}
+         ID:id ASSIGN expr:e
+         {:
+            if(!Variables.isValid(id)) { Translator._errorTrace("CUP Error: Variable no valida (expr ::= ID)"); }
+            RESULT = Translator.assignment(id, e);
+         :}
          |
-         ID:i
-         {: RESULT = i; :}
+         ternary_op:t
+         {: RESULT = t; :}
+         |
+         ID:id
+         {:
+            if(!Variables.isValid(id)) { Translator._errorTrace("CUP Error: Variable no valida (expr ::= ID)"); }
+            RESULT = id;
+         :}
          |
          NUMBER:n
          {: RESULT = n; :}
          ;
+
+ternary_op ::= cond:c QMARK:ternaryLabel
+               {:
+                  RESULT = Translator.getNewTmpVar("int");
+                  Translator._label(c.TrueLabel());
+               :}
+               expr:e1 COLON
+               {:
+                  Translator._applyAssign(RESULT, e1);
+                  Translator._goto(ternaryLabel);
+                  Translator._label(c.FalseLabel());
+               :}
+               expr:e2
+               {:
+                  Translator._applyAssign(RESULT, e2);
+                  Translator._goto(ternaryLabel);
+                  Translator._label(ternaryLabel);
+               :}
+               ;
 
 // ================================================================
 // ======================== COMPARISON OPS ========================

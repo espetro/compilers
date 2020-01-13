@@ -1,6 +1,6 @@
 import java.io.*;
 
-public class PLC {
+public class PLXC {
     /** Compilador del lenguaje PL(C) a codigo intermedio de tres direcciones. El lenguaje contiene
      *  * Expresiones relacionales de condicion
      *  * Expresiones logicas de condicion (AND, OR, NOT)

@@ -41,6 +41,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 
 %% // Token definitions - highest to lowest
 
+":" { return symbol(sym.COLON); }
+"?" { return symbol(sym.QMARK, Translator.getNewLabel()); }
 ";" { return symbol(sym.SEMI); }
 "(" { return symbol(sym.LPAREN); }
 ")" { return symbol(sym.RPAREN); }
@@ -64,6 +66,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "!" { return symbol(sym.NOT); }
 "&&" { return symbol(sym.AND); }
 "||" { return symbol(sym.OR); }
+
+"int" { return symbol(sym.INT); }
 
 "print" { return symbol(sym.PRINT); }
 "if" { return symbol(sym.IF, Translator.getNewLabel()); }
