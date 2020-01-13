@@ -43,6 +43,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 
 ":" { return symbol(sym.COLON); }
 "?" { return symbol(sym.QMARK, Translator.getNewLabel()); }
+"?:" { return symbol(sym.ELVIS, Translator.getNewLabel()); }
+
 ";" { return symbol(sym.SEMI); }
 "(" { return symbol(sym.LPAREN); }
 ")" { return symbol(sym.RPAREN); }

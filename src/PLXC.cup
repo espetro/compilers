@@ -8,18 +8,22 @@ terminal ASSIGN, INT, COLON, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
 terminal PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal NOT, OR, AND;
-terminal String IF, ELSE, DO, WHILE, QMARK;
+terminal String IF, ELSE, DO, WHILE, QMARK, ELVIS;
 terminal Condition FOR;
 terminal String ID, NUMBER;
 
 nonterminal Object statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt, vardeclare, vartype;
-nonterminal String expr, ternary_op;
+nonterminal String expr, ternary_op, elvis_op;
 nonterminal Condition cond, logical;
 
+/* PRIORITY LIST: Follows https://introcs.cs.princeton.edu/java/11precedence/ */
+
 // lowest priority
-precedence left IF;
-precedence left QMARK, COLON;
-precedence right ASSIGN;
+precedence nonassoc IF;
+precedence right QMARK;
+precedence left EQ, NEQ;
+precedence nonassoc LT, GT, GE, LE;
+precedence right ASSIGN, ELVIS;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
 precedence left UMINUS; // there's nothing at left of UMINUS
@@ -169,6 +173,9 @@ expr ::= expr:e1 PLUS expr:e2
          ternary_op:t
          {: RESULT = t; :}
          |
+         elvis_op:e
+         {: RESULT = e;:}
+         |
          ID:id
          {:
             if(!Variables.isValid(id)) { Translator._errorTrace("CUP Error: Variable no valida (expr ::= ID)"); }
@@ -193,10 +200,23 @@ ternary_op ::= cond:c QMARK:ternaryLabel
                expr:e2
                {:
                   Translator._applyAssign(RESULT, e2);
-                  Translator._goto(ternaryLabel);
                   Translator._label(ternaryLabel);
                :}
                ;
+
+elvis_op ::= expr:e1 ELVIS:elvisLabel
+             {:
+                 String _comparison = String.format("%s != 0", e1);
+                 RESULT = Translator.getNewTmpVar("int");
+                 Translator._applyAssign(RESULT, e1);
+                 Translator._if(_comparison, elvisLabel); // if NEQ to 0, don't assign e2 to RESULT
+             :}
+             expr:e2
+             {:
+                Translator._applyAssign(RESULT, e2);
+                Translator._label(elvisLabel);
+             :}
+             ;
 
 // ================================================================
 // ======================== COMPARISON OPS ========================

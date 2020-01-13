@@ -56,12 +56,12 @@ class Yylex implements java_cup.runtime.Scanner {
     "\1\0\1\1\1\2\1\3\1\4\1\5\2\6\1\4"+
     "\1\7\1\10\1\11\1\12\1\13\1\14\1\15\1\16"+
     "\1\17\1\20\1\21\1\22\1\23\2\1\6\5\1\4"+
-    "\1\0\1\24\1\25\1\26\1\27\1\30\1\31\1\5"+
-    "\1\32\3\5\1\33\1\5\1\0\1\34\1\5\1\35"+
-    "\3\5\1\36\1\5\1\37\1\40";
+    "\1\0\1\24\1\25\1\26\1\27\1\30\1\31\1\32"+
+    "\1\5\1\33\3\5\1\34\1\5\1\0\1\35\1\5"+
+    "\1\36\3\5\1\37\1\5\1\40\1\41";
 
   private static int [] zzUnpackAction() {
-    int [] result = new int[56];
+    int [] result = new int[57];
     int offset = 0;
     offset = zzUnpackAction(ZZ_ACTION_PACKED_0, offset, result);
     return result;
@@ -87,15 +87,16 @@ class Yylex implements java_cup.runtime.Scanner {
 
   private static final String ZZ_ROWMAP_PACKED_0 =
     "\0\0\0\45\0\112\0\45\0\157\0\224\0\271\0\45"+
-    "\0\45\0\45\0\45\0\45\0\45\0\45\0\45\0\45"+
-    "\0\45\0\45\0\336\0\u0103\0\u0128\0\u014d\0\u0172\0\u0197"+
-    "\0\u01bc\0\u01e1\0\u0206\0\u022b\0\u0250\0\u0275\0\u029a\0\u02bf"+
-    "\0\45\0\45\0\45\0\45\0\45\0\45\0\u02e4\0\224"+
-    "\0\u0309\0\u032e\0\u0353\0\224\0\u0378\0\u039d\0\224\0\u03c2"+
-    "\0\224\0\u03e7\0\u040c\0\u0431\0\224\0\u0456\0\224\0\224";
+    "\0\45\0\45\0\336\0\45\0\45\0\45\0\45\0\45"+
+    "\0\45\0\45\0\u0103\0\u0128\0\u014d\0\u0172\0\u0197\0\u01bc"+
+    "\0\u01e1\0\u0206\0\u022b\0\u0250\0\u0275\0\u029a\0\u02bf\0\u02e4"+
+    "\0\45\0\45\0\45\0\45\0\45\0\45\0\45\0\u0309"+
+    "\0\224\0\u032e\0\u0353\0\u0378\0\224\0\u039d\0\u03c2\0\224"+
+    "\0\u03e7\0\224\0\u040c\0\u0431\0\u0456\0\224\0\u047b\0\224"+
+    "\0\224";
 
   private static int [] zzUnpackRowMap() {
-    int [] result = new int[56];
+    int [] result = new int[57];
     int offset = 0;
     offset = zzUnpackRowMap(ZZ_ROWMAP_PACKED_0, offset, result);
     return result;
@@ -123,25 +124,25 @@ class Yylex implements java_cup.runtime.Scanner {
     "\1\22\1\23\1\24\1\25\1\26\1\27\1\30\1\31"+
     "\2\6\1\32\1\6\1\33\1\34\3\6\1\35\1\36"+
     "\1\6\46\0\1\37\1\40\51\0\1\11\41\0\3\6"+
-    "\21\0\15\6\5\0\2\7\60\0\1\41\44\0\1\42"+
-    "\44\0\1\43\44\0\1\44\50\0\1\45\45\0\1\46"+
-    "\21\0\3\6\21\0\1\6\1\47\3\6\1\50\7\6"+
-    "\4\0\3\6\21\0\4\6\1\51\10\6\4\0\3\6"+
-    "\21\0\11\6\1\52\3\6\4\0\3\6\21\0\7\6"+
-    "\1\53\5\6\4\0\3\6\21\0\11\6\1\54\3\6"+
-    "\4\0\3\6\21\0\14\6\1\55\3\37\1\5\3\37"+
-    "\1\11\35\37\2\40\1\56\42\40\4\0\3\6\21\0"+
-    "\2\6\1\57\12\6\4\0\3\6\21\0\1\60\14\6"+
-    "\4\0\3\6\21\0\4\6\1\61\10\6\4\0\3\6"+
-    "\21\0\10\6\1\62\4\6\4\0\3\6\21\0\1\63"+
-    "\14\6\1\40\1\11\1\56\42\40\4\0\3\6\21\0"+
-    "\1\6\1\64\13\6\4\0\3\6\21\0\6\6\1\65"+
-    "\6\6\4\0\3\6\21\0\7\6\1\66\5\6\4\0"+
-    "\3\6\21\0\2\6\1\67\12\6\4\0\3\6\21\0"+
-    "\6\6\1\70\6\6";
+    "\21\0\15\6\5\0\2\7\47\0\1\41\55\0\1\42"+
+    "\44\0\1\43\44\0\1\44\44\0\1\45\50\0\1\46"+
+    "\45\0\1\47\21\0\3\6\21\0\1\6\1\50\3\6"+
+    "\1\51\7\6\4\0\3\6\21\0\4\6\1\52\10\6"+
+    "\4\0\3\6\21\0\11\6\1\53\3\6\4\0\3\6"+
+    "\21\0\7\6\1\54\5\6\4\0\3\6\21\0\11\6"+
+    "\1\55\3\6\4\0\3\6\21\0\14\6\1\56\3\37"+
+    "\1\5\3\37\1\11\35\37\2\40\1\57\42\40\4\0"+
+    "\3\6\21\0\2\6\1\60\12\6\4\0\3\6\21\0"+
+    "\1\61\14\6\4\0\3\6\21\0\4\6\1\62\10\6"+
+    "\4\0\3\6\21\0\10\6\1\63\4\6\4\0\3\6"+
+    "\21\0\1\64\14\6\1\40\1\11\1\57\42\40\4\0"+
+    "\3\6\21\0\1\6\1\65\13\6\4\0\3\6\21\0"+
+    "\6\6\1\66\6\6\4\0\3\6\21\0\7\6\1\67"+
+    "\5\6\4\0\3\6\21\0\2\6\1\70\12\6\4\0"+
+    "\3\6\21\0\6\6\1\71\6\6";
 
   private static int [] zzUnpackTrans() {
-    int [] result = new int[1147];
+    int [] result = new int[1184];
     int offset = 0;
     offset = zzUnpackTrans(ZZ_TRANS_PACKED_0, offset, result);
     return result;
@@ -179,11 +180,11 @@ class Yylex implements java_cup.runtime.Scanner {
   private static final int [] ZZ_ATTRIBUTE = zzUnpackAttribute();
 
   private static final String ZZ_ATTRIBUTE_PACKED_0 =
-    "\1\0\1\11\1\1\1\11\3\1\13\11\15\1\1\0"+
-    "\6\11\7\1\1\0\12\1";
+    "\1\0\1\11\1\1\1\11\3\1\3\11\1\1\7\11"+
+    "\15\1\1\0\7\11\7\1\1\0\12\1";
 
   private static int [] zzUnpackAttribute() {
-    int [] result = new int[56];
+    int [] result = new int[57];
     int offset = 0;
     offset = zzUnpackAttribute(ZZ_ATTRIBUTE_PACKED_0, offset, result);
     return result;
@@ -655,131 +656,135 @@ class Yylex implements java_cup.runtime.Scanner {
         case 1: 
           { String txt = yytext(); throw new Error("Illegal character:\n" + txt + "\n" + getCharInfo(txt) + "\n");
           }
-        case 33: break;
+        case 34: break;
         case 2: 
           { return symbol(sym.DIV);
           }
-        case 34: break;
+        case 35: break;
         case 3: 
           { return symbol(sym.TIMES);
           }
-        case 35: break;
+        case 36: break;
         case 4: 
           { /* ignore */
           }
-        case 36: break;
+        case 37: break;
         case 5: 
           { return symbol(sym.ID, yytext());
           }
-        case 37: break;
+        case 38: break;
         case 6: 
           { return symbol(sym.NUMBER, yytext());
           }
-        case 38: break;
+        case 39: break;
         case 7: 
           { return symbol(sym.COLON);
           }
-        case 39: break;
+        case 40: break;
         case 8: 
           { return symbol(sym.QMARK, Translator.getNewLabel());
           }
-        case 40: break;
+        case 41: break;
         case 9: 
           { return symbol(sym.SEMI);
           }
-        case 41: break;
+        case 42: break;
         case 10: 
           { return symbol(sym.LPAREN);
           }
-        case 42: break;
+        case 43: break;
         case 11: 
           { return symbol(sym.RPAREN);
           }
-        case 43: break;
+        case 44: break;
         case 12: 
           { return symbol(sym.LCURLY);
           }
-        case 44: break;
+        case 45: break;
         case 13: 
           { return symbol(sym.RCURLY);
           }
-        case 45: break;
+        case 46: break;
         case 14: 
           { return symbol(sym.PLUS);
           }
-        case 46: break;
+        case 47: break;
         case 15: 
           { return symbol(sym.MINUS);
           }
-        case 47: break;
+        case 48: break;
         case 16: 
           { return symbol(sym.ASSIGN);
           }
-        case 48: break;
+        case 49: break;
         case 17: 
           { return symbol(sym.LT);
           }
-        case 49: break;
+        case 50: break;
         case 18: 
           { return symbol(sym.GT);
           }
-        case 50: break;
+        case 51: break;
         case 19: 
           { return symbol(sym.NOT);
           }
-        case 51: break;
-        case 20: 
-          { return symbol(sym.EQ);
-          }
         case 52: break;
-        case 21: 
-          { return symbol(sym.LE);
+        case 20: 
+          { return symbol(sym.ELVIS, Translator.getNewLabel());
           }
         case 53: break;
-        case 22: 
-          { return symbol(sym.GE);
+        case 21: 
+          { return symbol(sym.EQ);
           }
         case 54: break;
-        case 23: 
-          { return symbol(sym.NEQ);
+        case 22: 
+          { return symbol(sym.LE);
           }
         case 55: break;
-        case 24: 
-          { return symbol(sym.AND);
+        case 23: 
+          { return symbol(sym.GE);
           }
         case 56: break;
-        case 25: 
-          { return symbol(sym.OR);
+        case 24: 
+          { return symbol(sym.NEQ);
           }
         case 57: break;
-        case 26: 
-          { return symbol(sym.IF, Translator.getNewLabel());
+        case 25: 
+          { return symbol(sym.AND);
           }
         case 58: break;
-        case 27: 
-          { return symbol(sym.DO, Translator.getNewLabel());
+        case 26: 
+          { return symbol(sym.OR);
           }
         case 59: break;
-        case 28: 
-          { return symbol(sym.INT);
+        case 27: 
+          { return symbol(sym.IF, Translator.getNewLabel());
           }
         case 60: break;
-        case 29: 
-          { return symbol(sym.FOR, new Condition());
+        case 28: 
+          { return symbol(sym.DO, Translator.getNewLabel());
           }
         case 61: break;
-        case 30: 
-          { return symbol(sym.ELSE, Translator.getNewLabel());
+        case 29: 
+          { return symbol(sym.INT);
           }
         case 62: break;
-        case 31: 
-          { return symbol(sym.PRINT);
+        case 30: 
+          { return symbol(sym.FOR, new Condition());
           }
         case 63: break;
-        case 32: 
-          { return symbol(sym.WHILE, Translator.getNewLabel());
+        case 31: 
+          { return symbol(sym.ELSE, Translator.getNewLabel());
           }
         case 64: break;
+        case 32: 
+          { return symbol(sym.PRINT);
+          }
+        case 65: break;
+        case 33: 
+          { return symbol(sym.WHILE, Translator.getNewLabel());
+          }
+        case 66: break;
         default: 
           if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
             zzAtEOF = true;

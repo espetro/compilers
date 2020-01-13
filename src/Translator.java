@@ -37,9 +37,9 @@ public class Translator {
         String cond = String.format("%s %s %s", e1, comp_operators[op], e2);
 
         if(perm) {
-            _if(cond, tag.FalseLabel(), tag.TrueLabel());
+            _if_else(cond, tag.FalseLabel(), tag.TrueLabel());
         } else {
-            _if(cond, tag.TrueLabel(), tag.FalseLabel());
+            _if_else(cond, tag.TrueLabel(), tag.FalseLabel());
         }
         return tag;
     }
@@ -67,8 +67,16 @@ public class Translator {
         out.println(String.format("%s = %s %s %s;", assignTo, e1, op, e2));
     }
 
-    public static void _if(String cond, String lTrue, String lFalse) {
+    public static void _if_else(String cond, String lTrue, String lFalse) {
         out.println(String.format("if (%s) goto %s;", cond, lTrue));
+        out.println(String.format("goto %s;", lFalse));
+    }
+
+    public static void _if(String cond, String lTrue) {
+        out.println(String.format("if (%s) goto %s;", cond, lTrue));
+    }
+
+    public static void _else(String lFalse) {
         out.println(String.format("goto %s;", lFalse));
     }
 
