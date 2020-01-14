@@ -4,17 +4,20 @@ import java.util.*;
 
 // %%
 
-terminal ASSIGN, INT, COLON, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
+terminal ASSIGN, INT, COLON, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, BREAK, ANPERSAN;
 terminal PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal NOT, OR, AND;
-terminal String IF, ELSE, DO, WHILE, QMARK, ELVIS;
+terminal String IF, ELSE, DO, WHILE, QMARK, ELVIS, DEFAULT, CASE;
 terminal Condition FOR;
+terminal Switch SWITCH;
 terminal String ID, NUMBER;
 
-nonterminal Object statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt, vardeclare, vartype;
-nonterminal String expr, ternary_op, elvis_op;
+nonterminal Object statement_list, statement_list_opt, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
+nonterminal Object vardeclare, vartype, switch_case_stmt, default_opt;
+nonterminal String expr, ternary_op, elvis_op, break_opt;
 nonterminal Condition cond, logical;
+nonterminal Switch case_list;
 
 /* PRIORITY LIST: Follows https://introcs.cs.princeton.edu/java/11precedence/ */
 
@@ -52,6 +55,8 @@ stmt ::= vartype vardeclare SEMI
          do_while_stmt
          |
          while_stmt
+         |
+         switch_case_stmt
          |
          PRINT expr:e SEMI
          {: Translator._print(e); :}
@@ -141,6 +146,59 @@ for_stmt ::= FOR:forLabel LPAREN expr SEMI
              :}
              ;
 
+// ================================================================
+// =================== SWITCH-CASE STATEMENT ======================
+
+switch_case_stmt ::= case_list:cs
+                     {: Translator._label(cs.getNextCaseLabel()); :}
+                     default_opt RCURLY
+                     {: Translator._label(cs.getEndLabel()); :}
+                     ;
+
+default_opt ::= DEFAULT COLON statement_list_opt
+                |
+                // empty
+                ;
+
+case_list ::= SWITCH:switchTag LPAREN expr:e1 RPAREN LCURLY
+              CASE:caseTag expr:e2 COLON
+              {:
+                switchTag.setVarArg(e1);
+                String switchCond = String.format("%s != %s", e1, e2);
+                Translator._if(switchCond, caseTag);
+              :}
+              statement_list_opt break_opt:br
+              {:
+                switchTag.printGotoIfBreak(br);
+                Translator._label(caseTag);
+                RESULT = switchTag;
+              :}
+              |
+              case_list:cs CASE:caseTag expr:e1 COLON
+              {:
+                String switchCond = String.format("%s != %s", cs.getVarArg(), e1);
+                Translator._if(switchCond, caseTag); // jump the statement list (if any)
+                Translator._label(cs.getNextCaseLabel()); // link to the previous "case"
+              :}
+              statement_list_opt break_opt:br
+              {:
+                cs.printGotoIfBreak(br);
+                Translator._label(caseTag);
+                RESULT = cs;
+              :}
+              ;
+
+statement_list_opt ::= statement_list:ls
+                       |
+                       // empty
+                       ;
+
+break_opt ::= BREAK SEMI
+              {: RESULT = "break"; :}
+              |
+              // empty
+              {: RESULT = ""; :}
+              ;
 
 // ================================================================
 // ======================== ARITHMETIC OPS ========================

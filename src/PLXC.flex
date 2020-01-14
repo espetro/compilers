@@ -32,7 +32,7 @@ LineComment = "//" {InputCharacter}* {LineBreak}?
 MultiLineComment = "/*" ~"*/"
 
 InputCharacter = [^\r\n]
-Identifier = [A-Za-z_][A-Za-z0-9_]*
+Identifier = [a-zA-Z_][A-Za-z0-9_]*
 Number = 0 | [1-9][0-9]*
 
 LineBreak = \n|\r|\r\n
@@ -44,6 +44,7 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 ":" { return symbol(sym.COLON); }
 "?" { return symbol(sym.QMARK, Translator.getNewLabel()); }
 "?:" { return symbol(sym.ELVIS, Translator.getNewLabel()); }
+"&" { return symbol(sym.ANPERSAN); }
 
 ";" { return symbol(sym.SEMI); }
 "(" { return symbol(sym.LPAREN); }
@@ -70,6 +71,11 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "||" { return symbol(sym.OR); }
 
 "int" { return symbol(sym.INT); }
+
+"switch" { return symbol(sym.SWITCH, new Switch()); }
+"case" { return symbol(sym.CASE, Translator.getNewLabel()); }
+"break" { return symbol(sym.BREAK); }
+"default" { return symbol(sym.DEFAULT); }
 
 "print" { return symbol(sym.PRINT); }
 "if" { return symbol(sym.IF, Translator.getNewLabel()); }
