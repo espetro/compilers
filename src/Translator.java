@@ -7,6 +7,7 @@ import java.io.PrintStream;
 public class Translator {
     private static int tmpVarCount = 0, labelCount = 0;
     protected static PrintStream out, err;
+    public static PrintStream logging = System.out;
 
     // Comparison states
     public static final String comp_operators[] = {"<", "=="};
@@ -17,9 +18,9 @@ public class Translator {
         return "L" + labelCount++;
     }
 
-    public static String getNewTmpVar(String type) {
+    public static String getNewTmpVar(String type, boolean isPointer, boolean isDeref) {
         String tmp = "t" + tmpVarCount++;
-        Variables.declareTmpVar(tmp, "0", type);
+        Variables.declareTmpVar(tmp, type, isPointer, isDeref);
         return tmp;
     }
 
@@ -27,7 +28,10 @@ public class Translator {
     // ===================== NON-TERMINAL GENERATORS =====================
 
     public static String arithmetic(String e1, String op, String e2) {
-        String tmp = getNewTmpVar("int");
+        if(Variables.isPointer(e1) || Variables.isPointer(e2) || Variables.isDeref(e1) || Variables.isDeref(e2)) {
+            _errorTrace("ALU Error: Arithmetics with pointers/derefs is not allowed");
+        }
+        String tmp = getNewTmpVar("int", false, false);
         _applyOp(tmp, e1, op, e2);
         return tmp;
     }

@@ -14,8 +14,8 @@ terminal Switch SWITCH;
 terminal String ID, NUMBER;
 
 nonterminal Object statement_list, statement_list_opt, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
-nonterminal Object vardeclare, vartype, switch_case_stmt, default_opt;
-nonterminal String expr, ternary_op, elvis_op, break_opt;
+nonterminal Object vardeclare, vartype, switch_case_stmt, default_opt, pointer_count;
+nonterminal String expr, pointer_expr, ternary_op, elvis_op, break_opt;
 nonterminal Condition cond, logical;
 nonterminal Switch case_list;
 
@@ -29,7 +29,7 @@ precedence nonassoc LT, GT, GE, LE;
 precedence right ASSIGN, ELVIS;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
-precedence left UMINUS; // there's nothing at left of UMINUS
+precedence left UMINUS;
 precedence left AND, OR;
 precedence left ELSE;
 precedence right NOT;
@@ -76,8 +76,22 @@ vartype ::= INT
             ;
 
 vardeclare ::= ID:id
-               {: Variables.declareVar(id, "0"); :}
+               {: Variables.declareVar(id); :}
+               |
+               pointer_count ID:id
+               {:
+                   Variables.declarePointer(id);
+                   Variables.resetPointerLevel();
+               :}
                ;
+
+pointer_count ::= pointer_count TIMES
+                  {: Variables.incPointerLevel(); :}
+                  |
+                  TIMES
+                  {: Variables.incPointerLevel(); :}
+                  ;
+
 // ================================================================
 // ======================= IF STATEMENT ===========================
 
@@ -224,7 +238,10 @@ expr ::= expr:e1 PLUS expr:e2
          |
          ID:id ASSIGN expr:e
          {:
-            if(!Variables.isValid(id)) { Translator._errorTrace("CUP Error: Variable no valida (expr ::= ID)"); }
+            if (!Variables.isValid(id)) { Translator._errorTrace("CUP Error: Variable no valida (ID = expr)"); }
+            if (Variables.isDeref(e) && !Variables.isPointer(id)) {
+                Translator._errorTrace("CUP Error: Una direccion de memoria solo se asigna a punteros (ID = expr)");
+            }
             RESULT = Translator.assignment(id, e);
          :}
          |
@@ -233,6 +250,9 @@ expr ::= expr:e1 PLUS expr:e2
          |
          elvis_op:e
          {: RESULT = e;:}
+         |
+         pointer_expr:pt
+         {: RESULT = pt; :}
          |
          ID:id
          {:
@@ -244,9 +264,12 @@ expr ::= expr:e1 PLUS expr:e2
          {: RESULT = n; :}
          ;
 
+// ================================================================
+// ======================== SPECIAL OPS ===========================
+
 ternary_op ::= cond:c QMARK:ternaryLabel
                {:
-                  RESULT = Translator.getNewTmpVar("int");
+                  RESULT = Translator.getNewTmpVar("int", false, false);
                   Translator._label(c.TrueLabel());
                :}
                expr:e1 COLON
@@ -265,7 +288,7 @@ ternary_op ::= cond:c QMARK:ternaryLabel
 elvis_op ::= expr:e1 ELVIS:elvisLabel
              {:
                  String _comparison = String.format("%s != 0", e1);
-                 RESULT = Translator.getNewTmpVar("int");
+                 RESULT = Translator.getNewTmpVar("int", false, false);
                  Translator._applyAssign(RESULT, e1);
                  Translator._if(_comparison, elvisLabel); // if NEQ to 0, don't assign e2 to RESULT
              :}
@@ -342,3 +365,75 @@ logical ::= NOT cond:c
                 RESULT = c2;
             :}
             ;
+
+// ================================================================
+// ====================== POINTER STATEMENTS ======================
+
+/**
+pointer_count ::= pointer_count TIMES
+                  {: Variables.incPointerLevel(); :}
+                  |
+                  TIMES
+                  {: Variables.incPointerLevel(); :}
+                  ;
+*/
+
+pointer_expr ::= pointer_count ID:id ASSIGN expr:e // *p = 1 + 2;
+                 {:
+                     // The temporal variables are pointers iff the pointer level when assigning is >= 1
+                     String tmp, res = id;
+
+                     if (Variables.getPointerLevel() > 1) {
+                         Variables.decPointerLevel(); // so it gets one less ptrLevel than ID
+                         res = Translator.getNewTmpVar("int", true, false);
+                         Translator._applyAssign(res, "*" + id);
+
+                         while (Variables.getPointerLevel() > 1) {
+                            Variables.decPointerLevel(); // so it gets one less ptrLevel than previous temp
+
+                            tmp = Translator.getNewTmpVar("int", true, false);
+                            Translator._applyAssign(tmp, "*" + res);
+                            res = tmp;
+                         }
+                     }
+                     Translator._applyAssign("*" + res, e);
+
+                     Variables.resetPointerLevel();
+                     RESULT = res;
+                 :}
+                 |
+                 pointer_count ID:id // *p and more (eg ****p)
+                 {:
+                     // The temporal variables are pointers iff the pointer level when assigning is >= 1
+                     // At least one temporal variable is created
+                     String tmp, res;
+                     Variables.decPointerLevel();
+
+                     if (Variables.getPointerLevel() > 0) { // more than one assignment is done
+                        res = Translator.getNewTmpVar("int", true, false);
+                        Translator._applyAssign(res, "*" + id);
+
+                        while(Variables.getPointerLevel() > 0) {
+                            Variables.decPointerLevel();
+                            tmp = Translator.getNewTmpVar("int", Variables.getPointerLevel() > 0, false);
+                            Translator._applyAssign(tmp, "*" + res);
+                            res = tmp;
+                        }
+                     } else { // just a single assignment is done
+                        res = Translator.getNewTmpVar("int", false, false);
+                        Translator._applyAssign(res, "*" + id);
+                     }
+
+                     // Always return a no-pointer
+                     RESULT = res;
+                 :}
+                 |
+                 ANPERSAN ID:id // this implicitly checks that '&' is only applied to variables
+                 {:
+                     Variables.incDerefLevel();
+                     RESULT = Translator.getNewTmpVar("int", false, true);  // declares it as a level-1 deref temp
+                     Variables.resetDerefLevel();
+
+                     Translator._applyAssign(RESULT, "&" + id);
+                 :}
+                 ;

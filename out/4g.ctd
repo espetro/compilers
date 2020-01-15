@@ -1,0 +1,10 @@
+x = 3;
+t0 = &x;
+px = t0;
+t1 = &px;
+ppx = t1;
+error;
+# CUP Error: error de sintaxis
+t2 = *ppx;
+t3 = *t2;
+print t3;

@@ -1,0 +1,21 @@
+x = 7;
+t0 = &x;
+p = t0;
+t1 = &x;
+q = t1;
+t2 = *p;
+t3 = *q;
+t4 = t2 + t3;
+x = t4;
+error;
+# ALU Error: Arithmetics with pointers/derefs is not allowed
+t5 = p + q;
+r = t5;
+t6 = &x;
+r = t6;
+t7 = *p;
+t8 = *q;
+t9 = t7 * t8;
+t10 = *r;
+t11 = t9 * t10;
+print t11;
