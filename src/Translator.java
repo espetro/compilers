@@ -22,7 +22,7 @@ public class Translator {
 
     public static String arithmetic(String e1, String op, String e2, boolean toSelf) {
         // Ternary operator evaluates both before checking the condition - thus we may produce unused temporal vars
-        String tmp = toSelf ? e1 : Variables.declareTempVar("int");
+        String tmp = toSelf ? e1 : Variables.declareTemp("int", "0");
         _applyOp(tmp, e1, op, e2);
         return tmp;
     }
@@ -32,9 +32,9 @@ public class Translator {
         String cond = String.format("%s %s %s", e1, comp_operators[op], e2);
 
         if(perm) {
-            _if(cond, tag.FalseLabel(), tag.TrueLabel());
+            _if_else(cond, tag.FalseLabel(), tag.TrueLabel());
         } else {
-            _if(cond, tag.TrueLabel(), tag.FalseLabel());
+            _if_else(cond, tag.TrueLabel(), tag.FalseLabel());
         }
         return tag;
     }
@@ -47,6 +47,45 @@ public class Translator {
     // ===================================================================
     // ===================== DEFAULT MESSAGES ============================
 
+    public static void _updateArray(String id, String[] list) {
+        String eTo;
+        for (int i = 0; i < list.length; i++) {
+            eTo = String.format("%s[%s]", id, i);
+            Translator._applyAssign(eTo, list[i]);
+        }
+    }
+
+    public static void _copyArray(String idTo, String idFrom) {
+        String eTo, eFrom, t0 = Variables.declareTemp("int", "0");
+        int size = Variables.getSize(idFrom);
+
+        for (int i = 0; i < size; i++) {
+            eTo = String.format("%s[%s]", idTo, i);
+            eFrom = String.format("%s[%s]", idFrom, i);
+            Translator._applyAssign(t0, eFrom);
+            Translator._applyAssign(eTo, t0);
+        }
+    }
+
+    public static void _checkRange(String id, String idx) {
+        int size = Variables.getSize(id);
+        if (Variables.isConst(idx) && (Integer.parseInt(idx) >= size)) {
+            _errorTrace("ArrayOutOfBoundsException (ID[..])");
+        } else {
+            String l0 = getNewLabel(), l1 = getNewLabel();
+            _comment("Comprobacion de rangos");
+
+            _if(String.format("%s < 0", idx), l0);
+            _if(String.format("%s < %s", size, idx), l0);
+            _if(String.format("%s == %s", size, idx), l0);
+            _else(l1);
+
+            _label(l0);
+            _errorTrace("Fuera de rango");
+            _label(l1);
+        }
+
+    }
     public static void _goto(String label) {
         out.println(String.format("goto %s;", label));
     }
@@ -62,8 +101,16 @@ public class Translator {
         out.println(String.format("%s = %s %s %s;", assignTo, e1, op, e2));
     }
 
-    public static void _if(String cond, String lTrue, String lFalse) {
+    public static void _if_else(String cond, String lTrue, String lFalse) {
         out.println(String.format("if (%s) goto %s;", cond, lTrue));
+        out.println(String.format("goto %s;", lFalse));
+    }
+
+    public static void _if(String cond, String lTrue) {
+        out.println(String.format("if (%s) goto %s;", cond, lTrue));
+    }
+
+    public static void _else(String lFalse) {
         out.println(String.format("goto %s;", lFalse));
     }
 
@@ -71,9 +118,14 @@ public class Translator {
         out.println(String.format("print %s;", exp));
     }
 
+    public static void _comment(String info) {
+        out.println("# " + info);
+    }
+
     public static void _errorTrace(String info) {
         err.println("error;");
         err.println(String.format("# %s", info));
+        _halt();
     }
 
     public static void _halt() {

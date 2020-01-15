@@ -4,7 +4,7 @@ import java.util.*;
 
 // %%
 
-terminal ASSIGN, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET, INT;
+terminal ASSIGN, SEMI, COMMA, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET, INT;
 terminal PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal PLUS_ASSIGN, MINUS_ASSIGN, TIMES_ASSIGN, DIV_ASSIGN;
 terminal EQ, NEQ, LT, GT, LE, GE;
@@ -14,7 +14,7 @@ terminal Condition FOR;
 terminal String ID, NUMBER;
 
 nonterminal Object statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt, typedef, vardeclare;
-nonterminal String expr, op_asign_expr;
+nonterminal String expr, op_asign_expr, array_expr, array_init, init_list;
 nonterminal Condition cond, logical;
 
 // lowest priority
@@ -68,8 +68,43 @@ typedef ::= INT
 
 vardeclare ::= ID:id
                {: Variables.declareVar(id); :}
+               |
+               ID:id LBRACKET NUMBER:n RBRACKET array_init:arr
+               {:
+                   String[] list = arr.split(",");
+                   int sz = Integer.parseInt(n);
+
+                   switch (list[0]) {
+                       case "":
+                           Variables.declareList(id, n);
+                           break;
+                       default:
+                           if(list.length > sz) {
+                               Translator._errorTrace("CUP Error: Array initialization length mismatch (ID[n] = {..})");
+                           }
+                           Variables.declareList(id, n);
+                           Translator._updateArray(id, list);
+                   }
+               :}
                ;
 
+
+// ================================================================
+// ==================== ARRAY DECLARE / INIT ======================
+
+array_init ::= ASSIGN LCURLY init_list:ls RCURLY
+               {: RESULT = ls; :}
+               |
+               // empty
+               {: RESULT = new String(); :}
+               ;
+
+init_list ::= init_list:ls COMMA expr:e
+              {: RESULT = ls + "," + e; :}
+              |
+              expr:e
+              {: RESULT = e; :}
+              ;
 
 // ================================================================
 // ======================= IF STATEMENT ===========================
@@ -165,10 +200,24 @@ expr ::= expr:e1 PLUS expr:e2
          ID:id ASSIGN expr:e
          {:
             if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
-            RESULT = Translator.assignment(id, e);
+
+            if (Variables.isList(id) && Variables.isList(e)) {
+                if (Variables.getSize(id) >= Variables.getSize(e)) {
+                    Translator._copyArray(id, e);
+                } else {
+                    Translator._errorTrace("CUP Error: La capacidad de las listas no coinciden");
+                }
+            } else {
+                Translator._applyAssign(id, e);
+            }
+
+            RESULT = id;
          :}
          |
          op_asign_expr:e
+         {: RESULT = e; :}
+         |
+         array_expr:e
          {: RESULT = e; :}
          |
          ID:id
@@ -182,19 +231,68 @@ expr ::= expr:e1 PLUS expr:e2
          ;
 
 op_asign_expr ::= ID:id PLUS_ASSIGN expr:e
-                  {: RESULT = Translator.arithmetic(id, "+", e, true); :}
+                  {:
+                      if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+                      RESULT = Translator.arithmetic(id, "+", e, true);
+                  :}
                   |
                   ID:id MINUS_ASSIGN expr:e
-                  {: RESULT = Translator.arithmetic(id, "-", e, true); :}
+                  {:
+                      if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+                      RESULT = Translator.arithmetic(id, "-", e, true);
+                  :}
                   |
                   ID:id TIMES_ASSIGN expr:e
-                  {: RESULT = Translator.arithmetic(id, "*", e, true); :}
+                  {:
+                      if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+                      RESULT = Translator.arithmetic(id, "*", e, true);
+                  :}
                   |
                   ID:id DIV_ASSIGN expr:e
-                  {: RESULT = Translator.arithmetic(id, "/", e, true); :}
+                  {:
+                      if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+                      RESULT = Translator.arithmetic(id, "/", e, true);
+                  :}
                   ;
 
+array_expr ::= ID:id LBRACKET expr:e RBRACKET
+               {:
+                   if (!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID[..])"); }
 
+                   Translator._checkRange(id, e);
+
+                   RESULT = Variables.declareTemp("int", "0");
+                   String _id = String.format("%s[%s]", id, e);
+                   Translator._applyAssign(RESULT, _id);
+               :}
+               |
+               ID:id LBRACKET expr:e1 RBRACKET ASSIGN expr:e2
+               {:
+                   if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID[..] = expr)"); }
+
+                   Translator._checkRange(id, e1);
+
+                   RESULT = id;
+                   String _id = String.format("%s[%s]", id, e1);
+                   Translator._applyAssign(_id, e2);
+               :}
+               |
+               ID:id ASSIGN LCURLY init_list:ls RCURLY
+               {:
+                    if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = {..})"); }
+
+                    String[] list = ls.split(",");
+                    int size = Variables.getSize(id);
+
+                    if (list.length > size) {
+                        Translator._errorTrace("CUP Error: La lista de origen es mayor que la de destino");
+                    } else {
+                        Translator._updateArray(id, list);
+                    }
+
+                    RESULT = id;
+               :}
+               ;
 // ================================================================
 // ======================== COMPARISON OPS ========================
 

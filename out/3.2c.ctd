@@ -1,0 +1,31 @@
+a[0] = 1;
+a[1] = 2;
+a[2] = 3;
+error;
+# CUP Error: La capacidad de las listas no coinciden
+halt;
+i = 0;
+label L0;
+if (i < 3) goto L2;
+goto L3;
+label L1;
+t0 = i + 1;
+i = t0;
+goto L0;
+label L2;
+# Comprobacion de rangos
+if (i < 0) goto L4;
+if (2 < i) goto L4;
+if (2 == i) goto L4;
+goto L5;
+label L4;
+error;
+# Fuera de rango
+halt;
+label L5;
+t1 = b[i];
+t2 = suma + t1;
+suma = t2;
+goto L1;
+label L3;
+print suma;

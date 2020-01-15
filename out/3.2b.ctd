@@ -1,0 +1,56 @@
+a[0] = 1;
+a[1] = 2;
+a[2] = 3;
+t0 = a[0];
+b[0] = t0;
+t0 = a[1];
+b[1] = t0;
+t0 = a[2];
+b[2] = t0;
+# Comprobacion de rangos
+if (3 < 0) goto L0;
+if (5 < 3) goto L0;
+if (5 == 3) goto L0;
+goto L1;
+label L0;
+error;
+# Fuera de rango
+halt;
+label L1;
+b[3] = 4;
+# Comprobacion de rangos
+if (4 < 0) goto L2;
+if (5 < 4) goto L2;
+if (5 == 4) goto L2;
+goto L3;
+label L2;
+error;
+# Fuera de rango
+halt;
+label L3;
+b[4] = 5;
+i = 0;
+label L4;
+if (i < 5) goto L6;
+goto L7;
+label L5;
+t1 = i + 1;
+i = t1;
+goto L4;
+label L6;
+# Comprobacion de rangos
+if (i < 0) goto L8;
+if (5 < i) goto L8;
+if (5 == i) goto L8;
+goto L9;
+label L8;
+error;
+# Fuera de rango
+halt;
+label L9;
+t2 = b[i];
+t3 = suma + t2;
+suma = t3;
+goto L5;
+label L7;
+print suma;
