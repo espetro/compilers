@@ -5,7 +5,7 @@ import java.io.PrintStream;
  * intermediate code generation. It allows to convert from PL subset to Three-Address Code.
  */
 public class Translator {
-    private static int tmpVarCount = 0, labelCount = 0;
+    private static int labelCount = 0;
     protected static PrintStream out, err;
 
     // Comparison states
@@ -13,7 +13,6 @@ public class Translator {
     public static final int LT = 0;
     public static final int EQ = 1;
 
-    public static String getNewTmpVar() { return "t" + tmpVarCount++; }
     public static String getNewLabel() {
         return "L" + labelCount++;
     }
@@ -21,8 +20,9 @@ public class Translator {
     // ===================================================================
     // ===================== NON-TERMINAL GENERATORS =====================
 
-    public static String arithmetic(String e1, String op, String e2) {
-        String tmp = getNewTmpVar();
+    public static String arithmetic(String e1, String op, String e2, boolean toSelf) {
+        // Ternary operator evaluates both before checking the condition - thus we may produce unused temporal vars
+        String tmp = toSelf ? e1 : Variables.declareTempVar("int");
         _applyOp(tmp, e1, op, e2);
         return tmp;
     }

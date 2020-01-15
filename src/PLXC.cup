@@ -4,21 +4,22 @@ import java.util.*;
 
 // %%
 
-terminal ASSIGN, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
+terminal ASSIGN, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET, INT;
 terminal PLUS, MINUS, TIMES, DIV, UMINUS;
+terminal PLUS_ASSIGN, MINUS_ASSIGN, TIMES_ASSIGN, DIV_ASSIGN;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal NOT, OR, AND;
 terminal String IF, ELSE, DO, WHILE;
 terminal Condition FOR;
 terminal String ID, NUMBER;
 
-nonterminal Object statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
-nonterminal String expr;
+nonterminal Object statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt, typedef, vardeclare;
+nonterminal String expr, op_asign_expr;
 nonterminal Condition cond, logical;
 
 // lowest priority
 precedence left IF;
-precedence right ASSIGN;
+precedence right ASSIGN, PLUS_ASSIGN, MINUS_ASSIGN, TIMES_ASSIGN, DIV_ASSIGN;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
 precedence left UMINUS; // there's nothing at left of UMINUS
@@ -36,7 +37,9 @@ statement_list ::= statement_list stmt
                    stmt
                    ;
 
-stmt ::= expr SEMI
+stmt ::= typedef vardeclare SEMI
+         |
+         expr SEMI
          |
          if_stmt
          |
@@ -55,6 +58,18 @@ stmt ::= expr SEMI
          error:e SEMI
          {: Translator._errorTrace("CUP Error: La sintaxis no es correcta"); :}
          ;
+
+// ================================================================
+// ==================== VARIABLE DECLARE / INIT ===================
+
+typedef ::= INT
+            {: Variables.setCurrentType("int"); :}
+            ;
+
+vardeclare ::= ID:id
+               {: Variables.declareVar(id); :}
+               ;
+
 
 // ================================================================
 // ======================= IF STATEMENT ===========================
@@ -129,33 +144,56 @@ for_stmt ::= FOR:forLabel LPAREN expr SEMI
 // ======================== ARITHMETIC OPS ========================
 
 expr ::= expr:e1 PLUS expr:e2
-         {: RESULT = Translator.arithmetic(e1, "+", e2); :}
+         {: RESULT = Translator.arithmetic(e1, "+", e2, false); :}
          |
          expr:e1 MINUS expr:e2
-         {: RESULT = Translator.arithmetic(e1, "-", e2); :}
+         {: RESULT = Translator.arithmetic(e1, "-", e2, false); :}
          |
          expr:e1 TIMES expr:e2
-         {: RESULT = Translator.arithmetic(e1, "*", e2); :}
+         {: RESULT = Translator.arithmetic(e1, "*", e2, false); :}
          |
          expr:e1 DIV expr:e2
-         {: RESULT = Translator.arithmetic(e1, "/", e2); :}
+         {: RESULT = Translator.arithmetic(e1, "/", e2, false); :}
          |
          MINUS expr:e
-         {: RESULT = Translator.arithmetic("0", "-", e); :}
+         {: RESULT = Translator.arithmetic("0", "-", e, false); :}
          %prec UMINUS
          |
          LPAREN expr:e RPAREN
          {: RESULT = e; :}
          |
-         ID:i ASSIGN expr:e
-         {: RESULT = Translator.assignment(i, e); :}
+         ID:id ASSIGN expr:e
+         {:
+            if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+            RESULT = Translator.assignment(id, e);
+         :}
          |
-         ID:i
-         {: RESULT = i; :}
+         op_asign_expr:e
+         {: RESULT = e; :}
+         |
+         ID:id
+         {:
+            if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+            RESULT = id;
+         :}
          |
          NUMBER:n
          {: RESULT = n; :}
          ;
+
+op_asign_expr ::= ID:id PLUS_ASSIGN expr:e
+                  {: RESULT = Translator.arithmetic(id, "+", e, true); :}
+                  |
+                  ID:id MINUS_ASSIGN expr:e
+                  {: RESULT = Translator.arithmetic(id, "-", e, true); :}
+                  |
+                  ID:id TIMES_ASSIGN expr:e
+                  {: RESULT = Translator.arithmetic(id, "*", e, true); :}
+                  |
+                  ID:id DIV_ASSIGN expr:e
+                  {: RESULT = Translator.arithmetic(id, "/", e, true); :}
+                  ;
+
 
 // ================================================================
 // ======================== COMPARISON OPS ========================

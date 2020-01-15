@@ -46,6 +46,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 ")" { return symbol(sym.RPAREN); }
 "{" { return symbol(sym.LCURLY); }
 "}" { return symbol(sym.RCURLY); }
+"[" { return symbol(sym.LBRACKET); }
+"]" { return symbol(sym.RBRACKET); }
 
 "+" { return symbol(sym.PLUS); }
 "-" { return symbol(sym.MINUS); }
@@ -53,6 +55,11 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "/" { return symbol(sym.DIV); }
 
 "=" { return symbol(sym.ASSIGN); }
+"+=" { return symbol(sym.PLUS_ASSIGN); }
+"-=" { return symbol(sym.MINUS_ASSIGN); }
+"*=" { return symbol(sym.TIMES_ASSIGN); }
+"/=" { return symbol(sym.DIV_ASSIGN); }
+
 
 "<" { return symbol(sym.LT); }
 ">" { return symbol(sym.GT); }
@@ -64,6 +71,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "!" { return symbol(sym.NOT); }
 "&&" { return symbol(sym.AND); }
 "||" { return symbol(sym.OR); }
+
+"int" { return symbol(sym.INT); }
 
 "print" { return symbol(sym.PRINT); }
 "if" { return symbol(sym.IF, Translator.getNewLabel()); }

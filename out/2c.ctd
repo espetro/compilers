@@ -1,0 +1,4 @@
+error;
+# CUP Error: La sintaxis no es correcta
+t0 = x * y;
+print t0;
