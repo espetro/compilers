@@ -78,12 +78,15 @@ vardeclare ::= ID:id var_init:var
                    }
                :}
                |
-               ID:id array_dims:arr_dims array_init:arr
+               ID:id array_dims:arr_dims array_init:arr // arr is a list of temporal arrays (for ND) or expr (for 1D)
                {:
                    String[] dims = arr_dims.split(",");
+
+                   // Translator.logging.println("dims are " + Variables.printArr(dims) + " and arr " + arr.length());
+
                    Variables.declareArray(id, dims);
 
-                   if (arr != "") {
+                   if (arr.length() > 0) {
                        // Checks if the length and form of the input list matches (strictly equal) the array dims
                        // if it's right then it calls the Translator
                        String[] init = arr.split(",");
@@ -123,14 +126,30 @@ array_init ::= ASSIGN LCURLY init_list:ls RCURLY
                ;
 
 init_list ::= init_list:ls COMMA init_list_elem:el
-              {: RESULT = ls + "," + el; :}
+              {:
+                  boolean wrongArrInit = Variables.isArray(ls) && Variables.isArray(el) &&
+                                         (Variables.getDims(ls) != Variables.getDims(el)) &&
+                                         (Variables.getSize(ls) != Variables.getSize(el));
+                  if (wrongArrInit) { // only if both are temporal arrays: check Cases 4 and 5
+                      Translator._errorTrace("Inicializacion de array nD incorrecta");
+                  }
+                  RESULT = ls + "," + el;
+              :}
               |
               init_list_elem:el
               {: RESULT = el; :}
               ;
 
 init_list_elem ::= LCURLY init_list:ls RCURLY
-                   {: RESULT = ls; :}
+                   {:
+                       // Declares a temporal list to store inner array values
+                       String[] init = ls.split(",");
+                       String[] initLength = Variables.tmpArrSize(init); // if inner arrays are temporal arrays
+
+                       RESULT = Variables.declareTempList("int", initLength);
+                       Translator.logging.println(RESULT + " has dimensions " + Variables.printArr(initLength));
+                       Variables.checkArrayAssign(RESULT, init);
+                   :}
                    |
                    expr:e
                    {: RESULT = e; :}
@@ -311,16 +330,8 @@ array_expr ::= ID:id array_accesses:access
                ID:id ASSIGN LCURLY init_list:ls RCURLY
                {:
                     Variables.checkID(id);
-
                     String[] list = ls.split(",");
-                    int size = Variables.getSize(id);
-
-                    if (list.length > size) {
-                        Translator._errorTrace("CUP Error: La lista de origen es mayor que la de destino");
-                    } else {
-                        Translator._updateArray(id, list);
-                    }
-
+                    Variables.checkArrayAssign(id, list);
                     RESULT = id;
                :}
                ;

@@ -123,9 +123,13 @@ public class Translator {
     }
 
     public static void _errorTrace(String info) {
-        err.println(_indent + "error;");
         if (info != "") { _comment(info); }
+        _error();
         _halt();
+    }
+
+    public static void _error() {
+        err.println(_indent + "error;");
     }
 
     public static void _halt() {

@@ -6,9 +6,15 @@ int i;
 int j;
 int k;
 b = { {{1,2,3,4,5},{2,4,3,2,1}}, {{3,6,5,4,3},{4,2,3,5,4}}, {{5,4,6,3,2},{6,4,3,2,1}} } ;
+// assign es { t0, t1, t2 } donde t1 = { t3, t4 } y t3 = {1,2,3,4,5}
+// en realidad, t1 es "int t[2][5]"
+
 for(i=0; i<3; i=i+1) {
+   // print(i);
    for(j=0; j<2; j=j+1) {
+      // print(j);
       for(k=0; k<5; k=k+1) {
+         // print(k);
          suma = suma + b[i][j][k];
          prod = prod + b[i][j][k] * b[i][j][k];
       }

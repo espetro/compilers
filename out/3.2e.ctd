@@ -1,64 +1,37 @@
-a[0] = 1;
-a[1] = 2;
-a[2] = 3;
-t0 = a[0];
-b[0] = t0;
-t0 = a[1];
-b[1] = t0;
-t0 = a[2];
-b[2] = t0;
-t1 = b[0];
-c[0] = t1;
-t1 = b[1];
-c[1] = t1;
-t1 = b[2];
-c[2] = t1;
-i = 0;
-label L0;
-if (i < 3) goto L2;
-goto L3;
-label L1;
-t2 = i + 1;
-i = t2;
-goto L0;
-label L2;
-# Comprobacion de rangos
-if (i < 0) goto L4;
-if (3 < i) goto L4;
-if (3 == i) goto L4;
-goto L5;
-label L4;
-error;
-# Fuera de rango
-halt;
-label L5;
-t3 = a[i];
-# Comprobacion de rangos
-if (i < 0) goto L6;
-if (3 < i) goto L6;
-if (3 == i) goto L6;
-goto L7;
-label L6;
-error;
-# Fuera de rango
-halt;
-label L7;
-t4 = b[i];
-t5 = t3 * t4;
-t6 = p + t5;
-# Comprobacion de rangos
-if (i < 0) goto L8;
-if (3 < i) goto L8;
-if (3 == i) goto L8;
-goto L9;
-label L8;
-error;
-# Fuera de rango
-halt;
-label L9;
-t7 = c[i];
-t8 = t6 + t7;
-p = t8;
-goto L1;
-label L3;
-print p;
+    a[0] = 1;
+    a[1] = 2;
+    a[2] = 3;
+    t0 = a[0];
+    b[0] = t0;
+    t0 = a[1];
+    b[1] = t0;
+    t0 = a[2];
+    b[2] = t0;
+    t1 = b[0];
+    c[0] = t1;
+    t1 = b[1];
+    c[1] = t1;
+    t1 = b[2];
+    c[2] = t1;
+    i = 0;
+L0:
+    if (i < 3) goto L2;
+    goto L3;
+L1:
+    t2 = i + 1;
+    i = t2;
+    goto L0;
+L2:
+#  == arr a: (length 3, dims 1) == 
+    t3 = a[i];
+#  == arr b: (length 3, dims 1) == 
+    t4 = b[i];
+    t5 = t3 * t4;
+    t6 = p + t5;
+#  == arr c: (length 3, dims 1) == 
+    t7 = c[i];
+    t8 = t6 + t7;
+    p = t8;
+    goto L1;
+L3:
+    print p;

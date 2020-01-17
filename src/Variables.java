@@ -66,12 +66,30 @@ public class Variables {
         return id;
     }
 
-    public static void declareArray(String id, String[] dims) {
-        List<Integer> int_dims = new ArrayList<>();
+    public static String declareTempList(String type, String[] dims) {
+        // Declares a 1D temporal array
+        String id = "t" + tmpVarCount++;
+        List<Integer> intDims = new ArrayList<>();
+
         for (String str : dims) {
-            int_dims.add(Integer.parseInt(str));
+            intDims.add(Integer.parseInt(str));
         }
-        variables.put(id, new Attributes(currentType, int_dims));
+
+        variables.put(id, new Attributes(type, intDims));
+        return id;
+    }
+
+    public static void declareArray(String id, String[] dims) {
+        List<Integer> intDims = new ArrayList<>();
+        for (String str : dims) {
+            intDims.add(Integer.parseInt(str));
+        }
+        // Translator.logging.println("Declaring " + id + " with dims " + intDims);
+        variables.put(id, new Attributes(currentType, intDims));
+
+        Translator._comment(
+                String.format(" == arr %s: (length %s, dims %s) == ", id, variables.get(id).getSize(), intDims.size())
+        );
     }
 
     // ================================================================
@@ -101,42 +119,60 @@ public class Variables {
 
     public static int getSize(String id) {
         if (!isDeclared(id)) {
-            Translator._errorTrace("CUP Error: variable " + id + " no declarada");
+            Translator._errorTrace("(getSize) CUP Error: variable " + id + " no declarada");
             System.exit(0);
         }
         return variables.get(id).getSize();
     }
 
+    public static String getDims(String id) {
+        // returns a String in order to be able to compare
+        if(!isDeclared(id)) {
+            Translator._errorTrace("(getDims) CUP Error: variable " + id + " no declarada");
+            System.exit(0);
+        }
+
+        String res = variables.get(id).getDims().toString()
+                              .replace("[","")
+                              .replace("]","");
+        return res;
+    }
+
     public static void checkArrayAssign(String id, String[] assign) {
-//        int numDims = variables.get(id).getNumDims();
-//
-//        switch (numDims) {
-//            case 0:
-//                Translator._errorTrace("Array assign error: Trying to assign to non-array");
-//                break;
-//            case 1:
-//                int size = variables.get(id).getSize();
-//                if (assign.length > size) {
-//                    Translator._errorTrace("Array assign error: las dimensiones no encajan con la inicializacion");
-//                }
-//                Translator._updateList(id, assign);
-//                break;
-//            default:
-//                int size = variables.get(id).getSize(); // total length of the 1D array
-//                if (assign.length > size || )
-//                Translator._updateArray(id, assign, numDims);
-//                break;
-//        }
-//        if(assign.length > sz) {
-//            Translator._errorTrace("CUP Error: Array initialization length mismatch (ID[n] = {..})");
-//        }
+        Integer arrLength = getSize(id), arrN = variables.get(id).getNumDims();
+        List<Integer> arrDims = variables.get(id).getDims();
+
+        // assign is a list of temporal arrays (for ND Arrays) or expressions (for 1D Arrays)
+
+        // 1st check: if the list of temporal arrays matches the root size of ID (inner lengths are checked at 'init_list' in CUP)
+        if (arrDims.get(0) != assign.length) {
+            String info = "Error: las dimensiones de los arrays " + id + " y [" + printArr(assign) + "] no coinciden";
+            Translator._errorTrace(info);
+        }
+
+        // 2nd check: multidimensional or 1D array?
+        if (arrN > 1) {
+            // check if the total size of the temporal arrays matches that of ID
+            String pos, aux = declareTemp("int");
+
+            for (int assignPos = 0; assignPos < assign.length; assignPos++) {
+                String tmpArr = assign[assignPos];
+                int tmpSize = getSize(tmpArr);
+
+                for (int valPos = 0; valPos < tmpSize; valPos++) {
+                    pos = String.valueOf(valPos + (tmpSize * assignPos)); // this ensures the inner arrays are flattened into the 1D-ID
+                    Translator._applyAssign(aux, tmpArr + "[" + valPos + "]");
+                    Translator._applyAssign(id + "[" + pos + "]", aux);
+                }
+            }
+        } else {
+            Translator._updateArray(id, assign);
+        }
     }
 
     public static String checkArrayAccess(String id, String[] access) {
         Integer arrLength = getSize(id), arrN = variables.get(id).getNumDims();
         String t0 = new String();
-
-        Translator._comment(String.format(" == arr %s: (length %s, dims %s) == ", id, arrLength, arrN));
 
         if (arrN > 1) { // i.e multidimensional array
             List<Integer> arrDims = variables.get(id).getDims();
@@ -163,5 +199,28 @@ public class Variables {
 
         Translator.logging.println("(checkArrayAccess) " + t0);
         return t0;
+    }
+
+    // ================================================================
+    // ============================= UTILS ============================
+
+    public static String printArr(String[] arr) {
+        String res = "";
+        for (String str : arr) {
+            res += str + " ";
+        }
+        return res;
+    }
+
+    public static String[] tmpArrSize(String[] arr) {
+        // gets the total length of the current + inner temporal arrays
+        String dims = String.valueOf(arr.length);
+
+        if (!isConst(arr[0])) {
+            // arguably all inner arrays are of the same size
+            dims += "," + getDims(arr[0]);
+        }
+
+        return dims.split(",");
     }
 }
