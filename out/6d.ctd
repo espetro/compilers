@@ -173,8 +173,26 @@ L9:
 L10:
     t7 = i * j;
     t8 = t7 * k;
+# Comprobacion de rangos
+    if (i < 0) goto L12;
+    if (2 < i) goto L12;
+    if (2 == i) goto L12;
+    goto L13;
+L12:
+    error;
+    halt;
+L13:
     t9 = 3 * i;
     t9 = t9 + j;
+# Comprobacion de rangos
+    if (j < 0) goto L14;
+    if (3 < j) goto L14;
+    if (3 == j) goto L14;
+    goto L15;
+L14:
+    error;
+    halt;
+L15:
     t10 = 5 * t9;
     t10 = t10 + k;
     t11 = c[t10];

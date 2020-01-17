@@ -1,85 +1,79 @@
+#  == arr a: (length 5, dims 1) == 
 # Comprobacion de rangos
-if (3 < 0) goto L0;
-if (5 < 3) goto L0;
-if (5 == 3) goto L0;
-goto L1;
-label L0;
-error;
-# Fuera de rango
-halt;
-label L1;
-a[3] = 4;
-a[0] = 1;
-a[1] = 2;
-a[2] = 3;
+    if (3 < 0) goto L0;
+    if (5 < 3) goto L0;
+    if (5 == 3) goto L0;
+    goto L1;
+L0:
+    error;
+    halt;
+L1:
+    a[3] = 4;
+    a[0] = 1;
+    a[1] = 2;
+    a[2] = 3;
 # Comprobacion de rangos
-if (4 < 0) goto L2;
-if (5 < 4) goto L2;
-if (5 == 4) goto L2;
-goto L3;
-label L2;
-error;
-# Fuera de rango
-halt;
-label L3;
-a[4] = 5;
+    if (4 < 0) goto L2;
+    if (5 < 4) goto L2;
+    if (5 == 4) goto L2;
+    goto L3;
+L2:
+    error;
+    halt;
+L3:
+    a[4] = 5;
 # Comprobacion de rangos
-if (0 < 0) goto L4;
-if (5 < 0) goto L4;
-if (5 == 0) goto L4;
-goto L5;
-label L4;
-error;
-# Fuera de rango
-halt;
-label L5;
-t0 = a[0];
+    if (0 < 0) goto L4;
+    if (5 < 0) goto L4;
+    if (5 == 0) goto L4;
+    goto L5;
+L4:
+    error;
+    halt;
+L5:
+    t0 = a[0];
 # Comprobacion de rangos
-if (1 < 0) goto L6;
-if (5 < 1) goto L6;
-if (5 == 1) goto L6;
-goto L7;
-label L6;
-error;
-# Fuera de rango
-halt;
-label L7;
-t1 = a[1];
+    if (1 < 0) goto L6;
+    if (5 < 1) goto L6;
+    if (5 == 1) goto L6;
+    goto L7;
+L6:
+    error;
+    halt;
+L7:
+    t1 = a[1];
 # Comprobacion de rangos
-if (2 < 0) goto L8;
-if (5 < 2) goto L8;
-if (5 == 2) goto L8;
-goto L9;
-label L8;
-error;
-# Fuera de rango
-halt;
-label L9;
-t2 = a[2];
-t3 = t1 * t2;
-t4 = t0 + t3;
+    if (2 < 0) goto L8;
+    if (5 < 2) goto L8;
+    if (5 == 2) goto L8;
+    goto L9;
+L8:
+    error;
+    halt;
+L9:
+    t2 = a[2];
+    t3 = t1 * t2;
+    t4 = t0 + t3;
 # Comprobacion de rangos
-if (3 < 0) goto L10;
-if (5 < 3) goto L10;
-if (5 == 3) goto L10;
-goto L11;
-label L10;
-error;
-# Fuera de rango
-halt;
-label L11;
-t5 = a[3];
+    if (3 < 0) goto L10;
+    if (5 < 3) goto L10;
+    if (5 == 3) goto L10;
+    goto L11;
+L10:
+    error;
+    halt;
+L11:
+    t5 = a[3];
 # Comprobacion de rangos
-if (4 < 0) goto L12;
-if (5 < 4) goto L12;
-if (5 == 4) goto L12;
-goto L13;
-label L12;
-error;
-# Fuera de rango
-halt;
-label L13;
-t6 = a[4];
-t7 = t5 * t6;
-t8 = t4 + t7;
-print t8;
+    if (4 < 0) goto L12;
+    if (5 < 4) goto L12;
+    if (5 == 4) goto L12;
+    goto L13;
+L12:
+    error;
+    halt;
+L13:
+    t6 = a[4];
+    t7 = t5 * t6;
+    t8 = t4 + t7;
+    print t8;

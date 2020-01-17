@@ -1,43 +1,41 @@
-x = 2;
-t0 = 1 + 1;
-t1 = x * 1;
-t2 = 1 + t1;
-a[0] = 1;
-a[1] = t0;
-a[2] = t2;
+#  == arr a: (length 3, dims 1) == 
+    x = 2;
+    t0 = 1 + 1;
+    t1 = x * 1;
+    t2 = 1 + t1;
+    a[0] = 1;
+    a[1] = t0;
+    a[2] = t2;
 # Comprobacion de rangos
-if (0 < 0) goto L0;
-if (3 < 0) goto L0;
-if (3 == 0) goto L0;
-goto L1;
-label L0;
-error;
-# Fuera de rango
-halt;
-label L1;
-t3 = a[0];
+    if (0 < 0) goto L0;
+    if (3 < 0) goto L0;
+    if (3 == 0) goto L0;
+    goto L1;
+L0:
+    error;
+    halt;
+L1:
+    t3 = a[0];
 # Comprobacion de rangos
-if (1 < 0) goto L2;
-if (3 < 1) goto L2;
-if (3 == 1) goto L2;
-goto L3;
-label L2;
-error;
-# Fuera de rango
-halt;
-label L3;
-t4 = a[1];
+    if (1 < 0) goto L2;
+    if (3 < 1) goto L2;
+    if (3 == 1) goto L2;
+    goto L3;
+L2:
+    error;
+    halt;
+L3:
+    t4 = a[1];
 # Comprobacion de rangos
-if (2 < 0) goto L4;
-if (3 < 2) goto L4;
-if (3 == 2) goto L4;
-goto L5;
-label L4;
-error;
-# Fuera de rango
-halt;
-label L5;
-t5 = a[2];
-t6 = t4 * t5;
-t7 = t3 + t6;
-print t7;
+    if (2 < 0) goto L4;
+    if (3 < 2) goto L4;
+    if (3 == 2) goto L4;
+    goto L5;
+L4:
+    error;
+    halt;
+L5:
+    t5 = a[2];
+    t6 = t4 * t5;
+    t7 = t3 + t6;
+    print t7;

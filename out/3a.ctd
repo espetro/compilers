@@ -1,23 +1,22 @@
+#  == arr x: (length 10, dims 1) == 
 # Comprobacion de rangos
-if (1 < 0) goto L0;
-if (10 < 1) goto L0;
-if (10 == 1) goto L0;
-goto L1;
-label L0;
-error;
-# Fuera de rango
-halt;
-label L1;
-x[1] = 3;
+    if (1 < 0) goto L0;
+    if (10 < 1) goto L0;
+    if (10 == 1) goto L0;
+    goto L1;
+L0:
+    error;
+    halt;
+L1:
+    x[1] = 3;
 # Comprobacion de rangos
-if (1 < 0) goto L2;
-if (10 < 1) goto L2;
-if (10 == 1) goto L2;
-goto L3;
-label L2;
-error;
-# Fuera de rango
-halt;
-label L3;
-t0 = x[1];
-print t0;
+    if (1 < 0) goto L2;
+    if (10 < 1) goto L2;
+    if (10 == 1) goto L2;
+    goto L3;
+L2:
+    error;
+    halt;
+L3:
+    t0 = x[1];
+    print t0;

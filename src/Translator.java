@@ -5,11 +5,11 @@ import java.io.PrintStream;
  * intermediate code generation. It allows to convert from PL subset to Three-Address Code.
  */
 public class Translator {
+    private static final String _indent = "    ";
     private static int labelCount = 0;
-    protected static PrintStream out, err;
-    protected static boolean checkRanges = true;
-    public static PrintStream logging = System.out;
-    public static final String _indent = "    ";
+    public static PrintStream out, err, logging = System.out;
+    protected static boolean checkRanges = true, debug = false;
+
 
     // Comparison states
     public static final String[] comp_operators = {"<", "=="};
@@ -106,21 +106,24 @@ public class Translator {
         out.println(String.format("%sprint %s;", _indent, exp));
     }
 
-    public static void _comment(String info) {
-        out.println("# " + info);
-    }
-
     public static void _errorTrace(String info) {
         if (info != "") { _comment(info); }
         _error();
         _halt();
     }
 
+    public static void _comment(String info) {
+        out.println("# " + info);
+        if (debug) { logging.println("# " + info); }
+    }
+
     public static void _error() {
         err.println(_indent + "error;");
+        if (debug) { logging.println(_indent + "error;"); }
     }
 
     public static void _halt() {
         out.println(_indent + "halt;");
+        if (debug) { logging.println(_indent + "halt;"); }
     }
 }

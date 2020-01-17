@@ -82,7 +82,9 @@ vardeclare ::= ID:id var_init:var
                {:
                    String[] dims = arr_dims.split(",");
 
-                   // Translator.logging.println("dims are " + Variables.printArr(dims) + " and arr " + arr.length());
+                   Translator.logging.println(
+                       String.format("Defining variable %s with dimensions %s", id, arr_dims)
+                   );
 
                    Variables.declareArray(id, dims);
 

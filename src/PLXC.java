@@ -22,7 +22,7 @@ public class PLXC {
     public static void setTranslator(PrintStream Pout, PrintStream Perr) {
         Translator.out = Pout;
         Translator.err = Perr;
-        Translator.checkRanges = false;
+        Translator.debug = true;
     }
 
     public static void main(String argv[]) {

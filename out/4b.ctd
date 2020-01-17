@@ -12,7 +12,6 @@ L1:
     t0 = t0 + 2;
     t1 = a[t0];
     print t1;
-#  == arr a: (length 6, dims 2) == 
 # Comprobacion de rangos
     if (2 < 0) goto L2;
     if (2 < 2) goto L2;

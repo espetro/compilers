@@ -143,6 +143,11 @@ public class Variables {
 
     public static void checkCopyArray(String idTo, String idFrom) {
         // An array can only be copied to another array of equal or bigger capacity
+        Translator.logging.println(
+                String.format("Copying array %s[%d] to array %s[%d]",
+                        idFrom, Variables.getSize(idFrom), idTo, Variables.getSize(idTo))
+        );
+
         if (Variables.getSize(idTo) >= Variables.getSize(idFrom)) {
             String eTo, eFrom, t0 = Variables.declareTemp("int");
             int size = Variables.getSize(idFrom);
@@ -165,8 +170,10 @@ public class Variables {
         // assign is a list of temporal arrays (for ND Arrays) or expressions (for 1D Arrays)
 
         // 1st check: if the list of temporal arrays matches the root size of ID (inner lengths are checked at 'init_list' in CUP)
-        if (arrDims.get(0) != assign.length) {
-            String info = "Error: las dimensiones de los arrays " + id + " y [" + printArr(assign) + "] no coinciden";
+        // as of 1D arrays, we can do "int a[5] = {1,2,3} or {1..5}", but we can't do int "a[5] = {1..6}"
+        if (arrDims.get(0) < assign.length) {
+            String info = String.format("Error: dimensiones de los arrays (%s, %d) y (%s, %d)",
+                    id, arrDims.get(0), printArr(assign), assign.length);
             Translator._errorTrace(info);
         }
 

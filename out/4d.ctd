@@ -1,3 +1,4 @@
+#  == arr a: (length 6, dims 2) == 
     i = 1;
 L0:
     if (i == 3) goto L2;
@@ -31,7 +32,15 @@ L10:
     t4 = i - 1;
     t5 = 2 * t4;
     t6 = t5 + j;
-#  == arr a: (length 6, dims 2) == 
+# Comprobacion de rangos
+    if (t2 < 0) goto L12;
+    if (3 < t2) goto L12;
+    if (3 == t2) goto L12;
+    goto L13;
+L12:
+    error;
+    halt;
+L13:
     t7 = 2 * t2;
     t7 = t7 + t3;
     a[t7] = t6;
@@ -41,43 +50,51 @@ L11:
 L5:
     factorial = 1;
     i = 1;
-L12:
-    if (i == 3) goto L14;
-    goto L15;
-L15:
-    if (i < 3) goto L16;
-    goto L17;
 L14:
-    goto L16;
-L13:
+    if (i == 3) goto L16;
+    goto L17;
+L17:
+    if (i < 3) goto L18;
+    goto L19;
+L16:
+    goto L18;
+L15:
     t8 = i + 1;
     i = t8;
-    goto L12;
-L16:
-    j = 1;
+    goto L14;
 L18:
-    if (j == 2) goto L20;
-    goto L21;
-L21:
-    if (j < 2) goto L22;
-    goto L23;
+    j = 1;
 L20:
-    goto L22;
-L19:
+    if (j == 2) goto L22;
+    goto L23;
+L23:
+    if (j < 2) goto L24;
+    goto L25;
+L22:
+    goto L24;
+L21:
     t9 = j + 1;
     j = t9;
-    goto L18;
-L22:
+    goto L20;
+L24:
     t10 = i - 1;
     t11 = j - 1;
-#  == arr a: (length 6, dims 2) == 
+# Comprobacion de rangos
+    if (t10 < 0) goto L26;
+    if (3 < t10) goto L26;
+    if (3 == t10) goto L26;
+    goto L27;
+L26:
+    error;
+    halt;
+L27:
     t12 = 2 * t10;
     t12 = t12 + t11;
     t13 = a[t12];
     t14 = factorial * t13;
     factorial = t14;
-    goto L19;
-L23:
-    goto L13;
-L17:
+    goto L21;
+L25:
+    goto L15;
+L19:
     print factorial;

@@ -1,3 +1,4 @@
-print 0;
-error;
+    print 0;
 # CUP Error: La sintaxis no es correcta
+    error;
+    halt;
