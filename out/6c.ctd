@@ -1,0 +1,73 @@
+#  == arr a: (length 3, dims 1) == 
+    a[0] = 1;
+    a[1] = 2;
+    a[2] = 3;
+#  == arr b: (length 3, dims 1) == 
+    b[0] = 4;
+    b[1] = 5;
+    b[2] = 6;
+#  == arr c: (length 6, dims 2) == 
+    t0 = a[0];
+    c[0] = t0;
+    t0 = a[1];
+    c[1] = t0;
+    t0 = a[2];
+    c[2] = t0;
+    t0 = b[0];
+    c[3] = t0;
+    t0 = b[1];
+    c[4] = t0;
+    t0 = b[2];
+    c[5] = t0;
+#  == arr d: (length 6, dims 2) == 
+    t1 = c[0];
+    d[0] = t1;
+    t1 = c[1];
+    d[1] = t1;
+    t1 = c[2];
+    d[2] = t1;
+    t1 = c[3];
+    d[3] = t1;
+    t1 = c[4];
+    d[4] = t1;
+    t1 = c[5];
+    d[5] = t1;
+    i = 0;
+L0:
+    if (i < 2) goto L2;
+    goto L3;
+L1:
+    t2 = i + 1;
+    i = t2;
+    goto L0;
+L2:
+    j = 0;
+L4:
+    if (j < 3) goto L6;
+    goto L7;
+L5:
+    t3 = j + 1;
+    j = t3;
+    goto L4;
+L6:
+    if (signo == 1) goto L9;
+    goto L10;
+L9:
+    t4 = 0 - 1;
+    signo = t4;
+    goto L8;
+L10:
+    signo = 1;
+    goto L8;
+L8:
+    t5 = 3 * i;
+    t5 = t5 + j;
+    t6 = d[t5];
+    t7 = signo * t6;
+    t8 = suma + t7;
+    suma = t8;
+    goto L5;
+L7:
+    goto L1;
+L3:
+    print suma;

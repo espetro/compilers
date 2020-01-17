@@ -87,10 +87,14 @@ vardeclare ::= ID:id var_init:var
                    Variables.declareArray(id, dims);
 
                    if (arr.length() > 0) {
-                       // Checks if the length and form of the input list matches (strictly equal) the array dims
-                       // if it's right then it calls the Translator
-                       String[] init = arr.split(",");
-                       Variables.checkArrayAssign(id, init);
+                       if (Variables.isVariableExpr(arr)) { // Check if array_init is strictly an ID (no ',')
+                           Variables.checkCopyArray(id, arr);
+                       } else {
+                           // Checks if the length and form of the input list matches (strictly equal) the array dims
+                           // if it's right then it calls the Translator
+                           String[] init = arr.split(",");
+                           Variables.checkArrayAssign(id, init);
+                       }
                    }
                :}
                ;
@@ -120,6 +124,12 @@ array_dims ::= array_dims:ds LBRACKET NUMBER:n RBRACKET
 // Case 5: int a[2][2] = { {1,2,3}, {4,5} }; (ERROR)
 array_init ::= ASSIGN LCURLY init_list:ls RCURLY
                {: RESULT = ls; :}
+               |
+               ASSIGN ID:id
+               {:
+                   Variables.checkID(id);
+                   RESULT = id;
+               :}
                |
                // empty
                {: RESULT = new String(); :}
@@ -250,16 +260,12 @@ expr ::= expr:e1 PLUS expr:e2
          {:
             Variables.checkID(id);
 
-            if (Variables.isArray(id) && Variables.isArray(e)) {
-                if (Variables.getSize(id) >= Variables.getSize(e)) {
-                    Translator._copyArray(id, e);
-                } else {
-                    Translator._errorTrace("CUP Error: La capacidad de las listas no coinciden");
-                }
+            boolean canCopyArray = Variables.isArray(id) && Variables.isArray(e);
+            if (canCopyArray) {
+                Variables.checkCopyArray(id, e);
             } else {
                 Translator._applyAssign(id, e);
             }
-
             RESULT = id;
          :}
          |

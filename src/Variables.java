@@ -99,6 +99,9 @@ public class Variables {
         return str.matches("0|[1-9][0-9]*");
     }
 
+    public static boolean isVariableExpr(String str) {
+        return str.matches("[a-zA-Z][a-zA-Z0-9_]*");
+    }
     // ================================================================
     // ======================== VARIABLE CHECKERS =====================
 
@@ -136,6 +139,23 @@ public class Variables {
                               .replace("[","")
                               .replace("]","");
         return res;
+    }
+
+    public static void checkCopyArray(String idTo, String idFrom) {
+        // An array can only be copied to another array of equal or bigger capacity
+        if (Variables.getSize(idTo) >= Variables.getSize(idFrom)) {
+            String eTo, eFrom, t0 = Variables.declareTemp("int");
+            int size = Variables.getSize(idFrom);
+
+            for (int i = 0; i < size; i++) {
+                eTo = String.format("%s[%s]", idTo, i);
+                eFrom = String.format("%s[%s]", idFrom, i);
+                Translator._applyAssign(t0, eFrom);
+                Translator._applyAssign(eTo, t0);
+            }
+        } else {
+            Translator._errorTrace("CUP Error " + idTo + "," + idFrom + ": La capacidad de las listas no coinciden");
+        }
     }
 
     public static void checkArrayAssign(String id, String[] assign) {

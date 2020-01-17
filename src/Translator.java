@@ -58,18 +58,6 @@ public class Translator {
         }
     }
 
-    public static void _copyArray(String idTo, String idFrom) {
-        String eTo, eFrom, t0 = Variables.declareTemp("int");
-        int size = Variables.getSize(idFrom);
-
-        for (int i = 0; i < size; i++) {
-            eTo = String.format("%s[%s]", idTo, i);
-            eFrom = String.format("%s[%s]", idFrom, i);
-            Translator._applyAssign(t0, eFrom);
-            Translator._applyAssign(eTo, t0);
-        }
-    }
-
     public static void _checkRange(String dimSize, String idx) {
         if (checkRanges) {
             String l0 = getNewLabel(), l1 = getNewLabel();
