@@ -14,7 +14,7 @@ terminal Condition FOR;
 terminal String ID, NUMBER;
 
 nonterminal Object statement_list, stmt, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt, typedef, vardeclare;
-nonterminal String expr, op_asign_expr, array_expr, array_init, init_list;
+nonterminal String expr, op_asign_expr, array_expr, array_init, init_list, init_list_elem, array_dims, array_accesses, var_init;
 nonterminal Condition cond, logical;
 
 // lowest priority
@@ -56,7 +56,10 @@ stmt ::= typedef vardeclare SEMI
          {: /* done in the inner statement list */ :}
          |
          error:e SEMI
-         {: Translator._errorTrace("CUP Error: La sintaxis no es correcta"); :}
+         {:
+             Translator.logging.println("Error " + e);
+             Translator._errorTrace("CUP Error: La sintaxis no es correcta");
+         :}
          ;
 
 // ================================================================
@@ -66,32 +69,52 @@ typedef ::= INT
             {: Variables.setCurrentType("int"); :}
             ;
 
-vardeclare ::= ID:id
-               {: Variables.declareVar(id); :}
-               |
-               ID:id LBRACKET NUMBER:n RBRACKET array_init:arr
+vardeclare ::= ID:id var_init:var
                {:
-                   String[] list = arr.split(",");
-                   int sz = Integer.parseInt(n);
+                   Variables.declareVar(id);
 
-                   switch (list[0]) {
-                       case "":
-                           Variables.declareList(id, n);
-                           break;
-                       default:
-                           if(list.length > sz) {
-                               Translator._errorTrace("CUP Error: Array initialization length mismatch (ID[n] = {..})");
-                           }
-                           Variables.declareList(id, n);
-                           Translator._updateArray(id, list);
+                   if (var.length() > 0) {
+                       Translator.assignment(id, var);
+                   }
+               :}
+               |
+               ID:id array_dims:arr_dims array_init:arr
+               {:
+                   String[] dims = arr_dims.split(",");
+                   Variables.declareArray(id, dims);
+
+                   if (arr != "") {
+                       // Checks if the length and form of the input list matches (strictly equal) the array dims
+                       // if it's right then it calls the Translator
+                       String[] init = arr.split(",");
+                       Variables.checkArrayAssign(id, init);
                    }
                :}
                ;
 
+var_init ::= ASSIGN expr:e
+             {: RESULT = e; :}
+             |
+             // empty
+             {: RESULT = new String(); :}
+             ;
 
 // ================================================================
 // ==================== ARRAY DECLARE / INIT ======================
 
+array_dims ::= array_dims:ds LBRACKET NUMBER:n RBRACKET
+               {: RESULT = ds + ","  + n; :}
+               |
+               LBRACKET NUMBER:n RBRACKET
+               {: RESULT = n; :}
+               ;
+
+// Case 0: int a[1];
+// Case 1: int a[2] = {1,2};
+// Case 2: int a[2][2] = { {1,2}, {3,4} };
+// Case 3: int a[2][2] = { {1}, {2} };
+// Case 4: int a[2][2] = { {1,2}, {3} }; (ERROR)
+// Case 5: int a[2][2] = { {1,2,3}, {4,5} }; (ERROR)
 array_init ::= ASSIGN LCURLY init_list:ls RCURLY
                {: RESULT = ls; :}
                |
@@ -99,12 +122,19 @@ array_init ::= ASSIGN LCURLY init_list:ls RCURLY
                {: RESULT = new String(); :}
                ;
 
-init_list ::= init_list:ls COMMA expr:e
-              {: RESULT = ls + "," + e; :}
+init_list ::= init_list:ls COMMA init_list_elem:el
+              {: RESULT = ls + "," + el; :}
               |
-              expr:e
-              {: RESULT = e; :}
+              init_list_elem:el
+              {: RESULT = el; :}
               ;
+
+init_list_elem ::= LCURLY init_list:ls RCURLY
+                   {: RESULT = ls; :}
+                   |
+                   expr:e
+                   {: RESULT = e; :}
+                   ;
 
 // ================================================================
 // ======================= IF STATEMENT ===========================
@@ -199,9 +229,9 @@ expr ::= expr:e1 PLUS expr:e2
          |
          ID:id ASSIGN expr:e
          {:
-            if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+            Variables.checkID(id);
 
-            if (Variables.isList(id) && Variables.isList(e)) {
+            if (Variables.isArray(id) && Variables.isArray(e)) {
                 if (Variables.getSize(id) >= Variables.getSize(e)) {
                     Translator._copyArray(id, e);
                 } else {
@@ -222,7 +252,7 @@ expr ::= expr:e1 PLUS expr:e2
          |
          ID:id
          {:
-            if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+            Variables.checkID(id);
             RESULT = id;
          :}
          |
@@ -232,54 +262,55 @@ expr ::= expr:e1 PLUS expr:e2
 
 op_asign_expr ::= ID:id PLUS_ASSIGN expr:e
                   {:
-                      if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+                      Variables.checkID(id);
                       RESULT = Translator.arithmetic(id, "+", e, true);
                   :}
                   |
                   ID:id MINUS_ASSIGN expr:e
                   {:
-                      if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+                      Variables.checkID(id);
                       RESULT = Translator.arithmetic(id, "-", e, true);
                   :}
                   |
                   ID:id TIMES_ASSIGN expr:e
                   {:
-                      if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+                      Variables.checkID(id);
                       RESULT = Translator.arithmetic(id, "*", e, true);
                   :}
                   |
                   ID:id DIV_ASSIGN expr:e
                   {:
-                      if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = expr)"); }
+                      Variables.checkID(id);
                       RESULT = Translator.arithmetic(id, "/", e, true);
                   :}
                   ;
 
-array_expr ::= ID:id LBRACKET expr:e RBRACKET
+// ================================================================
+// ======================== ARRAY/MATRIX OPS ======================
+
+array_expr ::= ID:id array_accesses:access
                {:
-                   if (!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID[..])"); }
+                   Variables.checkID(id); // checked when an ID token is parsed
+                   String[] dims = access.split(",");
+                   String pos = Variables.checkArrayAccess(id, dims); // returns the computed position
 
-                   Translator._checkRange(id, e);
-
-                   RESULT = Variables.declareTemp("int", "0");
-                   String _id = String.format("%s[%s]", id, e);
-                   Translator._applyAssign(RESULT, _id);
+                   RESULT = Variables.declareTemp("int");
+                   Translator._applyAssign(RESULT, id + "[" + pos  + "]");
                :}
                |
-               ID:id LBRACKET expr:e1 RBRACKET ASSIGN expr:e2
+               ID:id array_accesses:access ASSIGN expr:e2
                {:
-                   if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID[..] = expr)"); }
+                   Variables.checkID(id); // checked when an ID token is parsed
+                   String[] dims = access.split(",");
+                   String pos = Variables.checkArrayAccess(id, dims); // returns the computed position
 
-                   Translator._checkRange(id, e1);
-
+                   Translator._applyAssign(id + "[" + pos + "]", e2);
                    RESULT = id;
-                   String _id = String.format("%s[%s]", id, e1);
-                   Translator._applyAssign(_id, e2);
                :}
                |
                ID:id ASSIGN LCURLY init_list:ls RCURLY
                {:
-                    if(!Variables.isDeclared(id)) { Translator._errorTrace("CUP Error: variable no declarada (ID = {..})"); }
+                    Variables.checkID(id);
 
                     String[] list = ls.split(",");
                     int size = Variables.getSize(id);
@@ -293,6 +324,14 @@ array_expr ::= ID:id LBRACKET expr:e RBRACKET
                     RESULT = id;
                :}
                ;
+
+array_accesses ::= array_accesses:as LBRACKET expr:e RBRACKET
+                   {: RESULT = as + "," + e; :}
+                   |
+                   LBRACKET expr:e RBRACKET
+                   {: RESULT = e; :}
+                   ;
+
 // ================================================================
 // ======================== COMPARISON OPS ========================
 

@@ -7,9 +7,12 @@ import java.io.PrintStream;
 public class Translator {
     private static int labelCount = 0;
     protected static PrintStream out, err;
+    protected static boolean checkRanges = true;
+    public static PrintStream logging = System.out;
+    public static final String _indent = "    ";
 
     // Comparison states
-    public static final String comp_operators[] = {"<", "=="};
+    public static final String[] comp_operators = {"<", "=="};
     public static final int LT = 0;
     public static final int EQ = 1;
 
@@ -22,7 +25,7 @@ public class Translator {
 
     public static String arithmetic(String e1, String op, String e2, boolean toSelf) {
         // Ternary operator evaluates both before checking the condition - thus we may produce unused temporal vars
-        String tmp = toSelf ? e1 : Variables.declareTemp("int", "0");
+        String tmp = toSelf ? e1 : Variables.declareTemp("int");
         _applyOp(tmp, e1, op, e2);
         return tmp;
     }
@@ -56,7 +59,7 @@ public class Translator {
     }
 
     public static void _copyArray(String idTo, String idFrom) {
-        String eTo, eFrom, t0 = Variables.declareTemp("int", "0");
+        String eTo, eFrom, t0 = Variables.declareTemp("int");
         int size = Variables.getSize(idFrom);
 
         for (int i = 0; i < size; i++) {
@@ -67,55 +70,52 @@ public class Translator {
         }
     }
 
-    public static void _checkRange(String id, String idx) {
-        int size = Variables.getSize(id);
-        if (Variables.isConst(idx) && (Integer.parseInt(idx) >= size)) {
-            _errorTrace("ArrayOutOfBoundsException (ID[..])");
-        } else {
+    public static void _checkRange(String dimSize, String idx) {
+        if (checkRanges) {
             String l0 = getNewLabel(), l1 = getNewLabel();
             _comment("Comprobacion de rangos");
 
             _if(String.format("%s < 0", idx), l0);
-            _if(String.format("%s < %s", size, idx), l0);
-            _if(String.format("%s == %s", size, idx), l0);
+            _if(String.format("%s < %s", dimSize, idx), l0);
+            _if(String.format("%s == %s", dimSize, idx), l0);
             _else(l1);
 
             _label(l0);
-            _errorTrace("Fuera de rango");
+            _errorTrace("");
             _label(l1);
         }
-
     }
+
     public static void _goto(String label) {
-        out.println(String.format("goto %s;", label));
+        out.println(String.format("%sgoto %s;", _indent, label));
     }
     public static void _label(String label) {
-        out.println(String.format("label %s;", label));
+        out.println(String.format("%s:", label));
     }
 
     public static void _applyAssign(String a, String b) {
-        out.println(String.format("%s = %s;", a, b));
+        out.println(String.format("%s%s = %s;", _indent, a, b));
     }
 
     public static void _applyOp(String assignTo, String e1, String op, String e2) {
-        out.println(String.format("%s = %s %s %s;", assignTo, e1, op, e2));
+        out.println(String.format("%s%s = %s %s %s;", _indent, assignTo, e1, op, e2));
     }
 
     public static void _if_else(String cond, String lTrue, String lFalse) {
-        out.println(String.format("if (%s) goto %s;", cond, lTrue));
-        out.println(String.format("goto %s;", lFalse));
+        out.println(String.format("%sif (%s) goto %s;", _indent, cond, lTrue));
+        out.println(String.format("%sgoto %s;", _indent, lFalse));
     }
 
     public static void _if(String cond, String lTrue) {
-        out.println(String.format("if (%s) goto %s;", cond, lTrue));
+        out.println(String.format("%sif (%s) goto %s;", _indent, cond, lTrue));
     }
 
     public static void _else(String lFalse) {
-        out.println(String.format("goto %s;", lFalse));
+        out.println(String.format("%sgoto %s;", _indent, lFalse));
     }
 
     public static void _print(String exp) {
-        out.println(String.format("print %s;", exp));
+        out.println(String.format("%sprint %s;", _indent, exp));
     }
 
     public static void _comment(String info) {
@@ -123,12 +123,12 @@ public class Translator {
     }
 
     public static void _errorTrace(String info) {
-        err.println("error;");
-        err.println(String.format("# %s", info));
+        err.println(_indent + "error;");
+        if (info != "") { _comment(info); }
         _halt();
     }
 
     public static void _halt() {
-        out.println("halt;");
+        out.println(_indent + "halt;");
     }
 }
