@@ -90,12 +90,12 @@ vardeclare ::= ID:id var_init:var
 
                    if (arr.length() > 0) {
                        if (Variables.isVariableExpr(arr)) { // Check if array_init is strictly an ID (no ',')
-                           Variables.checkCopyArray(id, arr);
+                           Arrays.copyArray(id, arr);
                        } else {
                            // Checks if the length and form of the input list matches (strictly equal) the array dims
                            // if it's right then it calls the Translator
                            String[] init = arr.split(",");
-                           Variables.checkArrayAssign(id, init);
+                           Arrays.insertOrUpdate(id, init);
                        }
                    }
                :}
@@ -156,11 +156,11 @@ init_list_elem ::= LCURLY init_list:ls RCURLY
                    {:
                        // Declares a temporal list to store inner array values
                        String[] init = ls.split(",");
-                       String[] initLength = Variables.tmpArrSize(init); // if inner arrays are temporal arrays
+                       String[] initLength = Arrays.getDimsFromLiteral(init); // if inner arrays are temporal arrays
 
                        RESULT = Variables.declareTempList("int", initLength);
-                       Translator.logging.println(RESULT + " has dimensions " + Variables.printArr(initLength));
-                       Variables.checkArrayAssign(RESULT, init);
+                       Translator.logging.println(RESULT + " has dimensions " + Arrays.print(initLength));
+                       Arrays.insertOrUpdate(RESULT, init);
                    :}
                    |
                    expr:e
@@ -264,7 +264,7 @@ expr ::= expr:e1 PLUS expr:e2
 
             boolean canCopyArray = Variables.isArray(id) && Variables.isArray(e);
             if (canCopyArray) {
-                Variables.checkCopyArray(id, e);
+                Arrays.copyArray(id, e);
             } else {
                 Translator._applyAssign(id, e);
             }
@@ -319,7 +319,7 @@ array_expr ::= ID:id array_accesses:access
                {:
                    Variables.checkID(id); // checked when an ID token is parsed
                    String[] dims = access.split(",");
-                   String pos = Variables.checkArrayAccess(id, dims); // returns the computed position
+                   String pos = Arrays.getPos(id, dims); // returns the computed position
 
                    RESULT = Variables.declareTemp("int");
                    Translator._applyAssign(RESULT, id + "[" + pos  + "]");
@@ -329,7 +329,7 @@ array_expr ::= ID:id array_accesses:access
                {:
                    Variables.checkID(id); // checked when an ID token is parsed
                    String[] dims = access.split(",");
-                   String pos = Variables.checkArrayAccess(id, dims); // returns the computed position
+                   String pos = Arrays.getPos(id, dims); // returns the computed position
 
                    Translator._applyAssign(id + "[" + pos + "]", e2);
                    RESULT = id;
@@ -339,7 +339,7 @@ array_expr ::= ID:id array_accesses:access
                {:
                     Variables.checkID(id);
                     String[] list = ls.split(",");
-                    Variables.checkArrayAssign(id, list);
+                    Arrays.insertOrUpdate(id, list);
                     RESULT = id;
                :}
                ;
