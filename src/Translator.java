@@ -7,7 +7,7 @@ import java.io.PrintStream;
 public class Translator {
     private static final String _indent = "    ";
     private static int labelCount = 0;
-    public static PrintStream out, err, logging = System.out;
+    public static PrintStream out, err, logging;
     protected static boolean checkRanges = true, debug = false;
 
 

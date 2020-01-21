@@ -57,7 +57,7 @@ stmt ::= typedef vardeclare SEMI
          |
          error:e SEMI
          {:
-             Translator.logging.println("Error " + e);
+             // Translator.logging.println("Error " + e);
              Translator._errorTrace("CUP Error: La sintaxis no es correcta");
          :}
          ;
@@ -82,9 +82,9 @@ vardeclare ::= ID:id var_init:var
                {:
                    String[] dims = arr_dims.split(",");
 
-                   Translator.logging.println(
-                       String.format("Defining variable %s with dimensions %s", id, arr_dims)
-                   );
+//                   Translator.logging.println(
+//                       String.format("Defining variable %s with dimensions %s", id, arr_dims)
+//                   );
 
                    Variables.declareArray(id, dims);
 
@@ -159,7 +159,7 @@ init_list_elem ::= LCURLY init_list:ls RCURLY
                        String[] initLength = Arrays.getDimsFromLiteral(init); // if inner arrays are temporal arrays
 
                        RESULT = Variables.declareTempList("int", initLength);
-                       Translator.logging.println(RESULT + " has dimensions " + Arrays.print(initLength));
+                       // Translator.logging.println(RESULT + " has dimensions " + Arrays.print(initLength));
                        Arrays.insertOrUpdate(RESULT, init);
                    :}
                    |

@@ -24,6 +24,15 @@ public class PLXC {
         Translator.err = Perr;
         Translator.debug = false;
         Translator.checkRanges = true;
+
+        if (Translator.debug) {
+            try {
+                Translator.logging = new PrintStream(new FileOutputStream("logging.txt"));
+            } catch (FileNotFoundException e) {
+                System.out.println("Cannot log to 'logging.txt'");
+                System.exit(0);
+            }
+        }
     }
 
     public static void main(String argv[]) {

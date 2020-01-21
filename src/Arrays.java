@@ -44,12 +44,12 @@ public class Arrays {
 
     public static void copyArray(String idTo, String idFrom) {
         // An array can only be copied to another array of equal or bigger capacity
-        Translator.logging.println(
-            String.format(
-                "Copying array %s[%d] to array %s[%d]",
-                idFrom, Variables.getSize(idFrom), idTo, Variables.getSize(idTo)
-            )
-        );
+//        Translator.logging.println(
+//            String.format(
+//                "Copying array %s[%d] to array %s[%d]",
+//                idFrom, Variables.getSize(idFrom), idTo, Variables.getSize(idTo)
+//            )
+//        );
 
         if (Variables.getSize(idTo) >= Variables.getSize(idFrom)) { // x = y iff size(x) >= size(y)
             String eTo, eFrom, t0 = Variables.declareTemp("int");
@@ -94,7 +94,7 @@ public class Arrays {
             t0 = access[0];
         }
 
-        Translator.logging.println("(checkArrayAccess) " + t0);
+//        Translator.logging.println("(checkArrayAccess) " + t0);
         return t0;
     }
 
