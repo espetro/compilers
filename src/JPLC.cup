@@ -1,0 +1,220 @@
+import java_cup.runtime.*;
+import java.lang.*;
+import java.util.*;
+
+// %%
+
+terminal ASSIGN, INT, MAIN, RETURN, SEMI, COMMA, LPAREN, RPAREN, LCURLY, RCURLY;
+terminal PLUS, MINUS, TIMES, DIV, UMINUS;
+terminal EQ, NEQ, LT, GT, LE, GE;
+terminal String IF, ELSE, WHILE;
+terminal String ID, NUMBER;
+
+nonterminal Object program, func_main, func_list, function, statement_list, stmt;
+nonterminal Object if_stmt, else_stmt, while_stmt, vardeclare;
+nonterminal String expr, vararg;
+nonterminal Condition cond, logical;
+
+// lowest priority
+precedence right RETURN;
+precedence left IF;
+precedence right ASSIGN;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIV;
+precedence left UMINUS; // there's nothing at left of UMINUS
+precedence left ELSE;
+// highest priority
+
+
+// %%
+
+// ========= TODO PROGRAMA CUENTA CON UN MAIN => (INT -> INT) =========
+
+program ::= func_list func_main func_list
+            ;
+
+statement_list ::= statement_list stmt
+                   |
+                   stmt
+                   ;
+
+stmt ::= INT vardeclare SEMI
+         |
+         expr SEMI
+         |
+         LCURLY statement_list RCURLY
+         {: /* done in the inner statement list */ :}
+         |
+         error:e SEMI // handles errors while parsing (not recommended)
+         {: Translator.logging.println("Error en el parsing: " + e.toString()); :}
+         ;
+//         if_stmt
+//         |
+//         while_stmt
+//         |
+
+
+vardeclare ::= vardeclare COMMA ID:id
+               {: Functions.declareLocal(id); :}
+               |
+               ID:id
+               {: Functions.declareLocal(id); :}
+               ;
+
+// ================================================================
+// ======================== FUNCTION STMTS ========================
+
+func_main ::= INT MAIN LPAREN vararg:arg RPAREN LCURLY
+              {:
+                  Functions.createFun("main", arg);
+              :}
+              statement_list
+              RCURLY
+              {:
+                 Translator._nop();
+                 Translator._limitStack("10");
+                 Translator._limitLocals("10");
+                 Translator._endMethod();
+              :}
+              ;
+
+func_list ::= func_list function
+              |
+              // empty
+              ;
+
+function ::= INT ID:id LPAREN vararg:arg RPAREN LCURLY
+             {:
+                 Functions.createFun(id, arg);
+             :}
+             statement_list
+             RCURLY
+             {:
+                 Translator._nop();
+                 Translator._limitStack("10");
+                 Translator._limitLocals("10");
+                 Translator._endMethod();
+             :}
+             ;
+
+vararg ::= INT ID:id // All IDs are integer, so no need to update any value
+           {: RESULT = id; :}
+           ;
+
+// ================================================================
+// ======================= IF STATEMENT ===========================
+
+//if_stmt ::= IF:endIf LPAREN cond:c RPAREN
+//            {: Translator._label(c.TrueLabel()); :}
+//            stmt
+//            {:
+//               Translator._goto(endIf);
+//               Translator._label(c.FalseLabel());
+//            :}
+//            else_stmt
+//            {:
+//               Translator._goto(endIf);
+//               Translator._label(endIf);
+//            :}
+//            ;
+//
+//else_stmt ::= ELSE stmt
+//              |
+//              // empty
+//              ;
+
+// ================================================================
+// ====================== WHILE STATEMENT =========================
+
+//while_stmt ::= WHILE:loopLabel LPAREN
+//               {: Translator._label(loopLabel); :}
+//               cond:c RPAREN
+//               {: Translator._label(c.TrueLabel()); :}
+//               stmt
+//               {:
+//                  Translator._goto(loopLabel);
+//                  Translator._label(c.FalseLabel());
+//               :}
+//               ;
+
+// ================================================================
+// ======================== ARITHMETIC OPS ========================
+
+expr ::= RETURN expr:e
+         {:
+             if(!Functions.didReturn() && (Translator.isConst(e) || Functions.isDeclared(e) || e == "stack")) {
+                 // IF function didnt return yet AND expr is either (constant, variable, arithmetic result) THEN
+                 Functions.enableReturn(e);
+                 Translator.Return(e);
+             } else {
+                 Translator.errorTrace("ERROR: Return " + e);
+             }
+         :}
+         |
+         expr:e1 PLUS expr:e2
+         {: RESULT = Translator.arithmetic(e1, "+", e2); :}
+         |
+         expr:e1 MINUS expr:e2
+         {: RESULT = Translator.arithmetic(e1, "-", e2); :}
+         |
+         expr:e1 TIMES expr:e2
+         {: RESULT = Translator.arithmetic(e1, "*", e2); :}
+         |
+         expr:e1 DIV expr:e2
+         {: RESULT = Translator.arithmetic(e1, "/", e2); :}
+         |
+         MINUS expr:e
+         {: RESULT = Translator.arithmetic("0", "-", e); :}
+         %prec UMINUS
+         |
+         LPAREN expr:e RPAREN
+         {: RESULT = e; :}
+         |
+         ID:id ASSIGN expr:e
+         {: RESULT = Translator.assignment(id, e); :}
+         |
+         ID:id
+         {: RESULT = id; :}
+         |
+         NUMBER:n
+         {: RESULT = n; :}
+         ;
+
+// ================================================================
+// ======================== COMPARISON OPS ========================
+
+//cond ::= expr:e1 EQ expr:e2
+//         {: RESULT = Translator.comparison(e1, Translator.EQ, e2, false); :}
+//         |
+//         expr:e1 LT expr:e2
+//         {: RESULT = Translator.comparison(e1, Translator.LT, e2, false); :}
+//         |
+//         expr:e1 NEQ expr:e2
+//         {: RESULT = Translator.comparison(e1, Translator.EQ, e2, true); :}
+//         |
+//         expr:e1 GT expr:e2
+//         {: RESULT = Translator.comparison(e2, Translator.LT, e1, false); :}
+//         |
+//         expr:e1 LE expr:e2
+//         {:
+//            Condition eq0 = Translator.comparison(e1, Translator.EQ, e2, false);
+//            Translator._label(eq0.FalseLabel());
+//            Condition lt0 = Translator.comparison(e1, Translator.LT, e2, false);
+//            Translator._label(eq0.TrueLabel());
+//            Translator._goto(lt0.TrueLabel());
+//            RESULT = lt0;
+//         :}
+//         |
+//         expr:e1 GE expr:e2
+//         {:
+//            Condition eq1 = Translator.comparison(e1, Translator.EQ, e2, false);
+//            Translator._label(eq1.FalseLabel());
+//            Condition lt1 = Translator.comparison(e2, Translator.LT, e1, false);
+//            Translator._label(eq1.TrueLabel());
+//            Translator._goto(lt1.TrueLabel());
+//            RESULT = lt1;
+//         :}
+//         |
+//         LPAREN cond:c RPAREN
+//         {: RESULT = c; :}
+//         ;
