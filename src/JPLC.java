@@ -22,10 +22,10 @@ public class JPLC {
 
     public static PrintStream out;
 
-    public static void setTranslator(PrintStream Pout, PrintStream Perr) {
+    public static void setTranslator(PrintStream Pout, PrintStream Perr) throws FileNotFoundException {
         Translator.out = Pout;
         Translator.err = Perr;
-        Translator.logging = System.out;
+        // Translator.logging = new PrintStream("app/log.txt");
     }
 
     public static void main(String argv[]) {

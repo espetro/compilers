@@ -12,11 +12,10 @@ terminal String ID, NUMBER;
 
 nonterminal Object program, func_main, func_list, function, statement_list, stmt;
 nonterminal Object if_stmt, else_stmt, while_stmt, vardeclare;
-nonterminal String expr, vararg;
+nonterminal String expr, vararg, varinit;
 nonterminal Condition cond, logical;
 
 // lowest priority
-precedence right RETURN;
 precedence left IF;
 precedence right ASSIGN;
 precedence left PLUS, MINUS;
@@ -46,7 +45,7 @@ stmt ::= INT vardeclare SEMI
          {: /* done in the inner statement list */ :}
          |
          error:e SEMI // handles errors while parsing (not recommended)
-         {: Translator.logging.println("Error en el parsing: " + e.toString()); :}
+         {: Translator.errorTrace("Error en el parsing: " + e.toString()); :}
          ;
 //         if_stmt
 //         |
@@ -54,12 +53,19 @@ stmt ::= INT vardeclare SEMI
 //         |
 
 
-vardeclare ::= vardeclare COMMA ID:id
-               {: Functions.declareLocal(id); :}
+vardeclare ::= vardeclare COMMA ID:id varinit:assign
+               {: Functions.declareLocal(id, assign); :}
                |
-               ID:id
-               {: Functions.declareLocal(id); :}
+               ID:id varinit:assign
+               {: Functions.declareLocal(id, assign); :}
                ;
+
+varinit ::= ASSIGN expr:e
+            {: RESULT = e; :}
+            |
+            // empty
+            {: RESULT = new String(); :}
+            ;
 
 // ================================================================
 // ======================== FUNCTION STMTS ========================
@@ -71,9 +77,10 @@ func_main ::= INT MAIN LPAREN vararg:arg RPAREN LCURLY
               statement_list
               RCURLY
               {:
+                 String totalLocals = Functions.getNumLocals();
                  Translator._nop();
                  Translator._limitStack("10");
-                 Translator._limitLocals("10");
+                 Translator._limitLocals(totalLocals);
                  Translator._endMethod();
               :}
               ;

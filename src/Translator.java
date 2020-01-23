@@ -36,18 +36,19 @@ public class Translator {
         Translator._returnMethod();
     }
 
-    // Case 0: expr is in stack => no instructions
+    // Case 0: expr is in stack (i.e. called "stack") => no instructions
     // Case 1: expr is a const => push(expr)
     // Case 2: expr is a variable => load(expr_index_vartable)
     public static void doExprAction(String expr) {
-        if (isConst(expr)) {
-            _push(expr);
+        if (expr != "stack") {
+            if (isConst(expr)) {
+                _push(expr);
+            }
+            else if (Functions.isDeclared(expr)) {
+                String idx = Functions.indexOf(expr);
+                Translator._load(idx);
+            }
         }
-        else if (Functions.isDeclared(expr)) {
-            String idx = Functions.indexOf(expr);
-            Translator._load(idx);
-        }
-        // else == "stack"
     }
 
     public static String arithmetic(String e1, String op, String e2) {

@@ -9,5 +9,5 @@
     ireturn
     nop
     .limit stack 10
-    .limit locals 10
+    .limit locals 1
 .end method
