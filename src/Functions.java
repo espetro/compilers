@@ -6,6 +6,7 @@ class Function {
     private boolean didReturn;
     private List<String> variables;
     private Stack<String> temporals; // A Last-In-First-Out (LIFO) List
+    private int maxStackSize;
 
     public static void defaultInit(String idx) {
         // PUSH - STORE (STORE ALREADY DOES A POP)
@@ -21,8 +22,10 @@ class Function {
         this.temporals = new Stack<>();
         this.variables = new ArrayList<>();
 
-        this.variables.add(arg); // arg is always at pos 0 of the local variable's stack
+        this.maxStackSize = 0;
+        // arg is always at pos 0 of the local variable's stack
         // arg is never initialized; it's always parsed from either a function call or program call
+        this.variables.add(arg);
     }
 
     public String getNumLocals() {
@@ -30,7 +33,7 @@ class Function {
     }
 
     public String getNumStack() {
-        return String.valueOf(this.temporals.size()); // for the number of operations (ACTUALLY THIS IS NOT RIGHT)
+        return String.valueOf(this.maxStackSize);
     }
 
     public void enableReturn() {
@@ -48,6 +51,14 @@ class Function {
         } else {
             this.variables.add(id);
         }
+    }
+
+    public void stackPush(String id) {
+        this.temporals.push(id);
+    }
+
+    public void stackPop() {
+        this.temporals.pop();
     }
 
     public boolean isDeclared(String id) {
@@ -95,10 +106,18 @@ public class Functions {
     // ==========================================
     // ================ ROUTINES ================
 
-    public static void enableReturn(String expr) {
+    public static void enableReturn() {
         // Enables the return on currFun
         checkNullFun();
         currFun.enableReturn();
+    }
+
+    public static void push(String id) {
+        currFun.stackPush(id);
+    }
+
+    public static void pop() {
+        currFun.stackPop();
     }
 
     // ==========================================
@@ -110,6 +129,7 @@ public class Functions {
             Translator.errorTrace("ERROR: Instruccion fuera de una funcion");
         }
     }
+
     public static boolean didReturn() {
         // Check if currFun did return
         checkNullFun();
@@ -120,6 +140,10 @@ public class Functions {
         // Checks if it is declared in currFun
         checkNullFun();
         return currFun.isDeclared(id);
+    }
+
+    public static boolean isFunction(String id) {
+        return funTable.containsKey(id);
     }
 
     // ==========================================
@@ -133,5 +157,10 @@ public class Functions {
     public static String getNumLocals() {
         // total number of local variables in the current function
         return currFun.getNumLocals();
+    }
+
+    public static String getNumStack() {
+        return "10";
+        // return currFun.getNumStack();
     }
 }

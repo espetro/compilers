@@ -77,9 +77,10 @@ func_main ::= INT MAIN LPAREN vararg:arg RPAREN LCURLY
               statement_list
               RCURLY
               {:
-                 String totalLocals = Functions.getNumLocals();
+                 String totalLocals = Functions.getNumLocals(),
+                        totalStack = Functions.getNumStack();
                  Translator._nop();
-                 Translator._limitStack("10");
+                 Translator._limitStack(totalStack);
                  Translator._limitLocals(totalLocals);
                  Translator._endMethod();
               :}
@@ -97,9 +98,11 @@ function ::= INT ID:id LPAREN vararg:arg RPAREN LCURLY
              statement_list
              RCURLY
              {:
+                 String totalLocals = Functions.getNumLocals(),
+                        totalStack = Functions.getNumStack();
                  Translator._nop();
-                 Translator._limitStack("10");
-                 Translator._limitLocals("10");
+                 Translator._limitStack(totalStack);
+                 Translator._limitLocals(totalLocals);
                  Translator._endMethod();
              :}
              ;
@@ -149,9 +152,11 @@ vararg ::= INT ID:id // All IDs are integer, so no need to update any value
 
 expr ::= RETURN expr:e
          {:
-             if(!Functions.didReturn() && (Translator.isConst(e) || Functions.isDeclared(e) || e == "stack")) {
-                 // IF function didnt return yet AND expr is either (constant, variable, arithmetic result) THEN
-                 Functions.enableReturn(e);
+             boolean cond = Translator.isConst(e) || Functions.isDeclared(e) || e == "stack" || Functions.isFunction(e);
+
+             // IF function didnt return yet AND expr is either (constant, variable, function, arithmetic result)
+             if(!Functions.didReturn() && cond) {
+                 Functions.enableReturn();
                  Translator.Return(e);
              } else {
                  Translator.errorTrace("ERROR: Return " + e);
@@ -177,11 +182,24 @@ expr ::= RETURN expr:e
          LPAREN expr:e RPAREN
          {: RESULT = e; :}
          |
+         ID:id LPAREN expr:e RPAREN // polinomio(x)
+         {:
+             Translator._call(id);
+             RESULT = id;
+         :}
+         |
          ID:id ASSIGN expr:e
          {: RESULT = Translator.assignment(id, e); :}
          |
          ID:id
-         {: RESULT = id; :}
+         {:
+             // ======= OJITO ======= Esto cambia el flow de expresiones compuestas con ID (ID se carga primero!)
+             if (Functions.isDeclared(id)) { // Comprueba si no haces llamadas anidadas: por2(mas1(2))
+                 String idx = Functions.indexOf(id);
+                 Translator._load(idx);
+             }
+             RESULT = id; // o mejor "stack"? Depende de si en "arithmetics" tambien hago "load"
+         :}
          |
          NUMBER:n
          {: RESULT = n; :}

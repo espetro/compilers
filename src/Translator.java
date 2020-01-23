@@ -29,26 +29,22 @@ public class Translator {
     // ===================================================================
     // ===================== NON-TERMINAL GENERATORS =====================
 
-    public static void Return(String expr) {
-        if (expr != "stack") {
-            Translator._push(expr);
-        }
-        Translator._returnMethod();
-    }
-
     // Case 0: expr is in stack (i.e. called "stack") => no instructions
     // Case 1: expr is a const => push(expr)
-    // Case 2: expr is a variable => load(expr_index_vartable)
+    // Case 2: expr is a variable => no instructions (it must be already loaded in ID:id in CUP)
     public static void doExprAction(String expr) {
         if (expr != "stack") {
             if (isConst(expr)) {
                 _push(expr);
             }
-            else if (Functions.isDeclared(expr)) {
-                String idx = Functions.indexOf(expr);
-                Translator._load(idx);
-            }
+            // else isVariable => nothing
+            // else isFunction => ???
         }
+    }
+
+    public static void Return(String expr) {
+        doExprAction(expr);
+        Translator._returnMethod();
     }
 
     public static String arithmetic(String e1, String op, String e2) {
@@ -106,6 +102,11 @@ public class Translator {
 
     public static void _endMethod() {
         out.println(".end method");
+        out.println();
+    }
+
+    public static void _call(String fun) {
+        out.println(String.format("%sinvokestatic JPL/%s(I)I", _indent, fun));
     }
 
     public static void _push(String cnst) {
@@ -177,6 +178,6 @@ public class Translator {
 
     public static void _blank() {
         // improves intermediate code readability
-        out.println(_indent + "");
+        // out.println(_indent + "");
     }
 }
