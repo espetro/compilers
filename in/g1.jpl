@@ -1,7 +1,7 @@
 int main(int n) {
    int j;
    j=0;
-   while (j<n) {
+   while (j>n) {
      j = j+1;
    }
    return j;

@@ -13,7 +13,7 @@ terminal String ID, NUMBER;
 nonterminal Object program, func_main, func_list, function, statement_list, stmt;
 nonterminal Object if_stmt, else_stmt, while_stmt, vardeclare;
 nonterminal String expr, vararg, varinit;
-nonterminal Condition cond, logical;
+nonterminal Condition cond;
 
 // lowest priority
 precedence left IF;
@@ -41,15 +41,15 @@ stmt ::= INT vardeclare SEMI
          |
          expr SEMI
          |
+         while_stmt
+         |
          LCURLY statement_list RCURLY
          {: /* done in the inner statement list */ :}
          |
-         error:e SEMI // handles errors while parsing (not recommended)
+         error:e SEMI // handles errors while parsing (quite recommended)
          {: Translator.errorTrace("Error en el parsing: " + e.toString()); :}
          ;
 //         if_stmt
-//         |
-//         while_stmt
 //         |
 
 
@@ -136,16 +136,16 @@ vararg ::= INT ID:id // All IDs are integer, so no need to update any value
 // ================================================================
 // ====================== WHILE STATEMENT =========================
 
-//while_stmt ::= WHILE:loopLabel LPAREN
-//               {: Translator._label(loopLabel); :}
-//               cond:c RPAREN
-//               {: Translator._label(c.TrueLabel()); :}
-//               stmt
-//               {:
-//                  Translator._goto(loopLabel);
-//                  Translator._label(c.FalseLabel());
-//               :}
-//               ;
+while_stmt ::= WHILE:loopLabel LPAREN
+               {: Translator._label(loopLabel); :}
+               cond:c RPAREN
+               {: Translator._label(c.TrueLabel()); :}
+               stmt
+               {:
+                  Translator._goto(loopLabel);
+                  Translator._label(c.FalseLabel());
+               :}
+               ;
 
 // ================================================================
 // ======================== ARITHMETIC OPS ========================
@@ -208,38 +208,64 @@ expr ::= RETURN expr:e
 // ================================================================
 // ======================== COMPARISON OPS ========================
 
-//cond ::= expr:e1 EQ expr:e2
-//         {: RESULT = Translator.comparison(e1, Translator.EQ, e2, false); :}
-//         |
-//         expr:e1 LT expr:e2
-//         {: RESULT = Translator.comparison(e1, Translator.LT, e2, false); :}
-//         |
-//         expr:e1 NEQ expr:e2
-//         {: RESULT = Translator.comparison(e1, Translator.EQ, e2, true); :}
-//         |
-//         expr:e1 GT expr:e2
-//         {: RESULT = Translator.comparison(e2, Translator.LT, e1, false); :}
-//         |
-//         expr:e1 LE expr:e2
-//         {:
-//            Condition eq0 = Translator.comparison(e1, Translator.EQ, e2, false);
-//            Translator._label(eq0.FalseLabel());
-//            Condition lt0 = Translator.comparison(e1, Translator.LT, e2, false);
-//            Translator._label(eq0.TrueLabel());
-//            Translator._goto(lt0.TrueLabel());
-//            RESULT = lt0;
-//         :}
-//         |
-//         expr:e1 GE expr:e2
-//         {:
-//            Condition eq1 = Translator.comparison(e1, Translator.EQ, e2, false);
-//            Translator._label(eq1.FalseLabel());
-//            Condition lt1 = Translator.comparison(e2, Translator.LT, e1, false);
-//            Translator._label(eq1.TrueLabel());
-//            Translator._goto(lt1.TrueLabel());
-//            RESULT = lt1;
-//         :}
-//         |
-//         LPAREN cond:c RPAREN
-//         {: RESULT = c; :}
-//         ;
+cond ::= expr:e1 EQ expr:e2
+         {: RESULT = Translator.comparison(Translator.EQ); :}
+         |
+         expr:e1 LT expr:e2
+         {:
+             // As we dont have iflt we've to double check: ifle && ifne
+             Condition tmp = new Condition();
+//             String tmpLabel = Translator.getNewLabel();
+
+             Translator._sub();
+             Translator._iflt(tmp.TrueLabel());
+             Translator._goto(tmp.FalseLabel());
+
+             /* ==== FOLLOWING CODE IS COMMENTED AS THERE'S AN ERROR WITH BYTECODE (but it's right!) ==== */
+//             Translator._duplicate(); // in order to do comparison two times!!
+//
+//             Translator._ifle(tmpLabel);
+//             Translator._goto(tmp.FalseLabel());
+//
+//             Translator._label(tmpLabel);
+//             Translator._ifne(tmp.TrueLabel());
+//             Translator._goto(tmp.FalseLabel());
+
+             RESULT = tmp;
+         :}
+         |
+         expr:e1 NEQ expr:e2
+         {: RESULT = Translator.comparison(Translator.NE); :}
+         |
+         expr:e1 GT expr:e2
+         {:
+             // As we dont have ifgt we've to double check: ifge && ifne
+             Condition tmp = new Condition();
+             String tmpLabel = Translator.getNewLabel();
+
+             Translator._sub();
+             Translator._ifgt(tmp.TrueLabel());
+             Translator._goto(tmp.FalseLabel());
+
+             /* ==== FOLLOWING CODE IS COMMENTED AS THERE'S AN ERROR WITH BYTECODE (but it's right!) ==== */
+//             Translator._duplicate(); // in order to do comparison two times!!
+//
+//             Translator._ifge(tmpLabel);
+//             Translator._goto(tmp.FalseLabel());
+//
+//             Translator._label(tmpLabel);
+//             Translator._ifne(tmp.TrueLabel());
+//             Translator._goto(tmp.FalseLabel());
+
+             RESULT = tmp;
+         :}
+         |
+         expr:e1 LE expr:e2
+         {: RESULT = Translator.comparison(Translator.LE); :}
+         |
+         expr:e1 GE expr:e2
+         {: RESULT = Translator.comparison(Translator.GE); :}
+         |
+         LPAREN cond:c RPAREN
+         {: RESULT = c; :}
+         ;

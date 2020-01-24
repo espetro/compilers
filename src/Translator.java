@@ -10,9 +10,10 @@ public class Translator {
     protected static PrintStream out, err, logging;
 
     // Comparison states
-    public static final String comp_operators[] = {"<", "=="};
-    public static final int LT = 0;
-    public static final int EQ = 1;
+    public static final int EQ = 0;
+    public static final int NE = 1;
+    public static final int LE = 2;
+    public static final int GE = 3;
 
     public static String getNewLabel() {
         return "L" + labelCount++;
@@ -60,15 +61,19 @@ public class Translator {
         // Even I can create a Stack instance to ensure temporal variable tX is in the stack (ONLY IF NEEDED)
     }
 
-    public static Condition comparison(String e1, int op, String e2, boolean perm) {
+    public static Condition comparison(int op) {
         Condition tag = new Condition();
-        String cond = String.format("%s %s %s", e1, comp_operators[op], e2);
+        String tTrue = tag.TrueLabel(), tFalse = tag.FalseLabel();
 
-//        if(perm) {
-//            _if(cond, tag.FalseLabel(), tag.TrueLabel());
-//        } else {
-//            _if(cond, tag.TrueLabel(), tag.FalseLabel());
-//        }
+        _sub();
+        switch (op) {
+            case Translator.EQ: _ifeq(tTrue); break;
+            case Translator.NE: _ifne(tTrue); break;
+            case Translator.GE: _ifge(tTrue); break;
+            case Translator.LE: _ifle(tTrue); break;
+        }
+        _goto(tFalse);
+
         return tag;
     }
 
@@ -145,23 +150,23 @@ public class Translator {
         out.println(_indent + "dup");
     }
     public static void _goto(String label) {
-        out.println(String.format("%sgoto %s;", _indent, label));
+        out.println(String.format("%sgoto %s", _indent, label));
     }
 
     public static void _ifeq(String label) {
-        out.println(String.format("%sifeq %s;", _indent, label));
+        out.println(String.format("%sifeq %s", _indent, label));
     }
 
     public static void _ifne(String label) {
-        out.println(String.format("%sifne %s;", _indent, label));
+        out.println(String.format("%sifne %s", _indent, label));
     }
 
     public static void _ifge(String label) {
-        out.println(String.format("%sifge %s;", _indent, label));
+        out.println(String.format("%sifge %s", _indent, label));
     }
 
     public static void _ifle(String label) {
-        out.println(String.format("%sifle %s;", _indent, label));
+        out.println(String.format("%sifle %s", _indent, label));
     }
 
     public static void _limitStack(String num) {
@@ -180,4 +185,15 @@ public class Translator {
         // improves intermediate code readability
         // out.println(_indent + "");
     }
+
+    // ==== TEMPORAL METHODS ====
+
+    public static void _ifgt(String label) {
+        out.println(String.format("%sifgt %s", _indent, label));
+    }
+
+    public static void _iflt(String label) {
+        out.println(String.format("%siflt %s", _indent, label));
+    }
+
 }
