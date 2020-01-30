@@ -19,6 +19,7 @@ public class Translator {
         Variables.declareTemp(id, type);
         return id;
     }
+
     public static String getNewLabel() {
         return "L" + labelCount++;
     }
@@ -27,7 +28,39 @@ public class Translator {
     // ===================== NON-TERMINAL GENERATORS =====================
 
     public static String arithmetic(String e1, String op, String e2) {
-        String tmp = getNewTmpVar("int"); // all variables up to now are going to be int
+        String type1 = Variables.getType(e1);
+        String type2 = Variables.getType(e2);
+        String tmp;
+
+        if (type1 == type2) {
+            tmp = (type1 == "char") ? getNewTmpVar("char") : getNewTmpVar("int");
+
+            switch (type1) {
+                case "char":
+                    // Case 1: Both expr are "char"
+                    // Case 1.1: Operation is not "+" or "-"
+                    if (op == "*" || op == "/") { Translator._errorTrace("Error: " + op + " no disp. para char"); }
+                    if (!Variables.isDeclared(e1)) {
+                        e1 = Char.toInt(e1);
+                    }
+                    if (!Variables.isDeclared(e2)) {
+                        e2 = Char.toInt(e2);
+                    }
+                    break;
+                default: break; // Case 2: Both expr are "int"
+            }
+        } else {
+            // Case 3: Different types (no implicit casting is allowed) => If "+" or "-" and one is INT, then it's OK
+            tmp = getNewTmpVar("int");
+
+            if (op == "*" || op == "/") { Translator._errorTrace("Error: Operacion entre tipos sin 'casting'"); }
+            if (type1 == "char" && !Variables.isDeclared(e1)) {
+                e1 = Char.toInt(e1);
+            } else if (type2 == "char" && !Variables.isDeclared(e2)) {
+                e2 = Char.toInt(e2);
+            }
+        }
+
         _applyOp(tmp, e1, op, e2);
         return tmp;
     }
@@ -47,12 +80,15 @@ public class Translator {
     public static String assignment(String id, String expr) {
         String type0 = Variables.getType(id);
         String type1 = Variables.getType(expr);
-        // Case 0: they differ in type
-        if (type0 != type1) {
+
+        if (type0 != type1 && (!Variables.isTemporal(id) && !Variables.isTemporal(expr))) {
+            // Case 0: they differ in type (unless both are temporal, which are internal operations and allowed (charoper8.plx)
             Translator._errorTrace("Las expresiones " + id + ", " + expr + " no son tipo-compatibles");
         } else {
             // Case 1: both have the same type
-            if (type1 == "char") { expr = String.valueOf((int) expr.replace("\'", "").charAt(0)); }
+            if (type1 == "char" && !Variables.isDeclared(expr)) {
+                expr = String.valueOf((int) expr.replace("\'", "").charAt(0));
+            }
             _applyAssign(id, expr);
         }
         return id;

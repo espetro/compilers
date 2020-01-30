@@ -5,7 +5,7 @@ import java.util.*;
 // %%
 
 terminal ASSIGN, INT, CHAR, SEMI, COMMA, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
-terminal INT_CAST, CHAR_CAST, PLUS, MINUS, TIMES, DIV, UMINUS;
+terminal INT_CAST, CHAR_CAST, TILDE, PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal NOT, OR, AND;
 terminal String IF, ELSE, DO, WHILE;
@@ -13,7 +13,7 @@ terminal Condition FOR;
 terminal String ID, CHAR_CONST, NUMBER;
 
 nonterminal program, statement_list, stmt, vardeclare, vartype, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
-nonterminal String expr, typecast, varinit;
+nonterminal String expr, typecast, tilded_expr, varinit;
 nonterminal Condition cond, logical;
 
 // lowest priority
@@ -22,7 +22,7 @@ precedence right ASSIGN;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
 precedence left AND, OR;
-precedence right NOT, UMINUS, INT_CAST, CHAR_CAST; // all unary operators
+precedence right NOT, TILDE, UMINUS, INT_CAST, CHAR_CAST; // all unary operators (NOT = TILDE_MAX for chars)
 precedence nonassoc IF, ELSE;
 // highest priority
 
@@ -216,6 +216,9 @@ expr ::= expr:e1 PLUS expr:e2
          |
          typecast:casted
          {: RESULT = casted; :}
+         |
+         tilded_expr:e
+         {: RESULT = e; :}
          ;
 
 typecast ::= INT_CAST expr:e
@@ -238,6 +241,54 @@ typecast ::= INT_CAST expr:e
                  }
              :}
              ;
+
+tilded_expr ::= TILDE expr:e // ~'a' or ~var1
+                {:
+                    String t0 = Translator.getNewTmpVar("char");
+                    Condition cond = new Condition();
+
+                    Translator.assignment(t0, e);
+
+                    if (Variables.isChar(e) && !Variables.isDeclared(e)) {
+                        e = Char.toInt(e);
+                    }
+
+                    Translator._if(e + " < 65", cond.TrueLabel()); // no es alfabetico
+                    Translator._if("122 < " + e, cond.TrueLabel()); // no es alfabetico
+                    Translator._if("96 < " + e, cond.FalseLabel()); // es minuscula => a Mayuscula
+                    Translator._if("90 < " + e, cond.TrueLabel()); // no es alfabetico
+
+                    Translator._applyOp(t0, e, "+", "32"); // es mayuscula => a Minuscula
+                    Translator._goto(cond.FalseLabel());
+
+                    Translator._label(cond.FalseLabel());
+                    Translator._applyOp(t0, e, "-", "32");
+                    Translator._label(cond.TrueLabel());
+
+                    RESULT = t0;
+                :}
+                |
+                NOT expr:e // !'a' or !var1
+                {:
+                    String t0 = Translator.getNewTmpVar("char");
+                    String outLabel = Translator.getNewLabel();
+
+                    Translator.assignment(t0, e);
+
+                    if (Variables.isChar(e) && !Variables.isDeclared(e)) {
+                        e = Char.toInt(e);
+                    }
+
+                    // If its not a Lowercase, go out
+                    Translator._if(String.format("%s < 97", e), outLabel);
+                    Translator._if(String.format("122 < %s", e), outLabel);
+                    Translator._applyOp(t0, e, "-", "32");
+
+                    Translator._label(outLabel);
+
+                    RESULT = t0;
+                :}
+                ;
 
 // ================================================================
 // ======================== COMPARISON OPS ========================

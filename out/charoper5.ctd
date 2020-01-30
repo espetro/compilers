@@ -1,0 +1,19 @@
+    a = 97;
+    B = 66;
+    x = 55;
+    t0 = a;
+    if (a < 97) goto L0;
+    if (122 < a) goto L0;
+    t0 = a - 32;
+L0:
+    t1 = t0;
+    if (t0 < 65) goto L1;
+    if (122 < t0) goto L1;
+    if (96 < t0) goto L2;
+    if (90 < t0) goto L1;
+    t1 = t0 + 32;
+    goto L2;
+L2:
+    t1 = t0 - 32;
+L1:
+    printc t1;

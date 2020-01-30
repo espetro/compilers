@@ -79,9 +79,11 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "<=" { return symbol(sym.LE); }
 ">=" { return symbol(sym.GE); }
 
-"!" { return symbol(sym.NOT); }
+"!" { return symbol(sym.NOT); } // also switches char to Mayus
 "&&" { return symbol(sym.AND); }
 "||" { return symbol(sym.OR); }
+
+"~" { return symbol(sym.TILDE); }
 
 "int" { return symbol(sym.INT); }
 "char" { return symbol(sym.CHAR); }

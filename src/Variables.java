@@ -37,6 +37,8 @@ public class Variables {
         return variables.containsKey(id);
     }
 
+    public static boolean isTemporal(String id) { return id.matches("t[0-9]+"); }
+
     public static boolean isChar(String str) {
         return str.contains("\'");
     }
