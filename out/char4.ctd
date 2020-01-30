@@ -1,0 +1,5 @@
+    x = 67;
+# Las expresiones a, x no son tipo-compatibles
+    error;
+    print x;
+    printc a;

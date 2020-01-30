@@ -1,0 +1,6 @@
+    a = 88;
+    b = 89;
+    c = 90;
+    printc a;
+    printc b;
+    printc c;

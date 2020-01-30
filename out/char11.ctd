@@ -1,0 +1,8 @@
+    a = 65;
+    c = 67;
+    t0 = a + c;
+    t1 = t0 / 2;
+    b = t1;
+    print a;
+    print b;
+    print c;

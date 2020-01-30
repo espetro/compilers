@@ -1,0 +1,307 @@
+import java_cup.runtime.*;
+import java.lang.*;
+import java.util.*;
+
+// %%
+
+terminal ASSIGN, INT, CHAR, SEMI, COMMA, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
+terminal INT_CAST, CHAR_CAST, PLUS, MINUS, TIMES, DIV, UMINUS;
+terminal EQ, NEQ, LT, GT, LE, GE;
+terminal NOT, OR, AND;
+terminal String IF, ELSE, DO, WHILE;
+terminal Condition FOR;
+terminal String ID, CHAR_CONST, NUMBER;
+
+nonterminal program, statement_list, stmt, vardeclare, vartype, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
+nonterminal String expr, typecast, varinit;
+nonterminal Condition cond, logical;
+
+// lowest priority
+precedence left IF;
+precedence right ASSIGN;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIV;
+precedence left AND, OR;
+precedence right NOT, UMINUS, INT_CAST, CHAR_CAST; // all unary operators
+precedence nonassoc IF, ELSE;
+// highest priority
+
+
+// %%
+
+// Beware: I'm dealing with chars by keeping the single quotes; this way I don't have to change anything on the compiler
+// structure (everything is a String, but only chars contain \' symbols).
+// I DO ALL CHECKS ON TRANSLATOR CLASS but I don't have to rewrite some stuff on here :D
+// Another valuable way would be to create a NONTERMINAL for character and process it from "statement_list"; only the
+// char (+, -) operations would be under "expr" (as they return an int).
+
+program ::= statement_list
+            |
+            // empty
+            {: Translator._comment("Entrada vacia"); :}
+            ;
+
+statement_list ::= statement_list stmt
+                   |
+                   stmt
+                   ;
+
+stmt ::= vartype vardeclare SEMI
+         |
+         expr SEMI
+         |
+         if_stmt
+         |
+         for_stmt
+         |
+         do_while_stmt
+         |
+         while_stmt
+         |
+         PRINT expr:e SEMI
+         {: Translator.print(e); :}
+         |
+         LCURLY statement_list RCURLY
+         {: /* done in the inner statement list */ :}
+         ;
+
+         /**
+         |
+         error:e SEMI // handles errors while parsing (not recommended)
+         {: :}
+         ;
+         */
+
+// ================================================================
+// =================== VARIABLE / ARRAY DECLARE ===================
+
+vartype ::= CHAR
+            {: Variables.setCurrentType("char"); :}
+            |
+            INT
+            {: Variables.setCurrentType("int"); :}
+            ;
+
+vardeclare ::= vardeclare:dec COMMA ID:id varinit:value
+               {:
+                   Variables.declareVar(id);
+
+                   if (value.length() > 0) {
+                       Translator.assignment(id, value);
+                   }
+               :}
+               |
+               ID:id varinit:value
+               {:
+                   Variables.declareVar(id);
+
+                   if (value.length() > 0) {
+                       Translator.assignment(id, value);
+                   }
+               :}
+               ;
+
+varinit ::= ASSIGN expr:e
+            {: RESULT = e; :}
+            |
+            // empty
+            {: RESULT = new String(); :}
+            ;
+
+// ================================================================
+// ======================= IF STATEMENT ===========================
+
+if_stmt ::= IF:endIf LPAREN cond:c RPAREN
+            {: Translator._label(c.TrueLabel()); :}
+            stmt
+            {:
+               Translator._goto(endIf);
+               Translator._label(c.FalseLabel());
+            :}
+            else_stmt
+            {:
+               Translator._goto(endIf);
+               Translator._label(endIf);
+            :}
+            ;
+
+else_stmt ::= ELSE stmt
+              |
+              // empty
+              ;
+
+// ================================================================
+// ====================== WHILE STATEMENT =========================
+
+while_stmt ::= WHILE:loopLabel LPAREN
+               {: Translator._label(loopLabel); :}
+               cond:c RPAREN
+               {: Translator._label(c.TrueLabel()); :}
+               stmt
+               {:
+                  Translator._goto(loopLabel);
+                  Translator._label(c.FalseLabel());
+               :}
+               ;
+
+
+do_while_stmt ::= DO:loopLabel
+                  {: Translator._label(loopLabel); :}
+                  stmt WHILE LPAREN cond:c RPAREN SEMI
+                  {:
+                     Translator._label(c.TrueLabel());
+                     Translator._goto(loopLabel);
+                     Translator._label(c.FalseLabel());
+                  :}
+                  ;
+
+// ================================================================
+// ======================= FOR STATEMENT ==========================
+
+for_stmt ::= FOR:forLabel LPAREN expr SEMI
+             // with TrueLabel we model the loop label
+             {: Translator._label(forLabel.TrueLabel()); :}
+             cond:c1 SEMI
+             // with FalseLabel we model the modifier expression
+             {: Translator._label(forLabel.FalseLabel()); :}
+             expr RPAREN
+             {:
+                Translator._goto(forLabel.TrueLabel());
+                Translator._label(c1.TrueLabel());
+             :}
+             stmt
+             {:
+                Translator._goto(forLabel.FalseLabel());
+                Translator._label(c1.FalseLabel());
+             :}
+             ;
+
+
+// ================================================================
+// ======================== ARITHMETIC OPS ========================
+
+expr ::= expr:e1 PLUS expr:e2
+         {: RESULT = Translator.arithmetic(e1, "+", e2); :}
+         |
+         expr:e1 MINUS expr:e2
+         {: RESULT = Translator.arithmetic(e1, "-", e2); :}
+         |
+         expr:e1 TIMES expr:e2
+         {: RESULT = Translator.arithmetic(e1, "*", e2); :}
+         |
+         expr:e1 DIV expr:e2
+         {: RESULT = Translator.arithmetic(e1, "/", e2); :}
+         |
+         MINUS expr:e
+         {: RESULT = Translator.arithmetic("0", "-", e); :}
+         %prec UMINUS
+         |
+         LPAREN expr:e RPAREN
+         {: RESULT = e; :}
+         |
+         ID:id ASSIGN expr:e
+         {: RESULT = Translator.assignment(id, e); :}
+         |
+         ID:id
+         {:
+             Variables.checkVar(id);  // confirms if the variable that it's being called is declared
+             RESULT = id;
+         :}
+         |
+         CHAR_CONST:id
+         {: RESULT = id; :} // All have single quotes
+         |
+         NUMBER:n
+         {: RESULT = n; :} // None have single quotes
+         |
+         typecast:casted
+         {: RESULT = casted; :}
+         ;
+
+typecast ::= INT_CAST expr:e
+             {:
+                 // WARNING!! THIS IS A HOTFIX FOR char10.plx (WHY THERE'S NO CONVERSION FOR char Variables????
+                 if (Variables.getType(e) == "char" && !Variables.isDeclared(e)) {
+                     RESULT = Char.toInt(e);
+                 } else {
+                     RESULT = e;
+                 }
+             :}
+             |
+             CHAR_CAST expr:e
+             {:
+                 // WARNING!! THIS IS A HOTFIX FOR char10.plx (WHY THERE'S NO CONVERSION FOR int Variables????
+                 if (Variables.getType(e) == "char" || Variables.isDeclared(e)) {
+                     RESULT = e;
+                 } else {
+                     RESULT = Char.fromInt(e);
+                 }
+             :}
+             ;
+
+// ================================================================
+// ======================== COMPARISON OPS ========================
+
+cond ::= expr:e1 EQ expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.EQ, e2, false); :}
+         |
+         expr:e1 LT expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.LT, e2, false); :}
+         |
+         expr:e1 NEQ expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.EQ, e2, true); :}
+         |
+         expr:e1 GT expr:e2
+         {: RESULT = Translator.comparison(e2, Translator.LT, e1, false); :}
+         |
+         expr:e1 LE expr:e2
+         {:
+            Condition eq0 = Translator.comparison(e1, Translator.EQ, e2, false);
+            Translator._label(eq0.FalseLabel());
+            Condition lt0 = Translator.comparison(e1, Translator.LT, e2, false);
+            Translator._label(eq0.TrueLabel());
+            Translator._goto(lt0.TrueLabel());
+            RESULT = lt0;
+         :}
+         |
+         expr:e1 GE expr:e2
+         {:
+            Condition eq1 = Translator.comparison(e1, Translator.EQ, e2, false);
+            Translator._label(eq1.FalseLabel());
+            Condition lt1 = Translator.comparison(e2, Translator.LT, e1, false);
+            Translator._label(eq1.TrueLabel());
+            Translator._goto(lt1.TrueLabel());
+            RESULT = lt1;
+         :}
+         |
+         LPAREN cond:c RPAREN
+         {: RESULT = c; :}
+         |
+         logical:l
+         {: RESULT = l; :}
+         ;
+
+// ================================================================
+// ======================== LOGICAL OPS ===========================
+
+logical ::= NOT cond:c
+            {: c.permute(); RESULT = c; :}
+            |
+            cond:c1 AND
+            {: Translator._label(c1.TrueLabel()); :}
+            cond:c2
+            {:
+                Translator._label(c1.FalseLabel());
+                Translator._goto(c2.FalseLabel());
+                RESULT = c2;
+            :}
+            |
+            cond:c1 OR
+            {: Translator._label(c1.FalseLabel()); :}
+            cond:c2
+            {:
+                Translator._label(c1.TrueLabel());
+                Translator._goto(c2.TrueLabel());
+                RESULT = c2;
+            :}
+            ;
