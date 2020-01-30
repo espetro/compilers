@@ -4,7 +4,7 @@ import java.util.*;
 
 // %%
 
-terminal ASSIGN, INT, CHAR, SEMI, COMMA, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET;
+terminal ASSIGN, INT, CHAR, SEMI, COMMA, COLON, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET;
 terminal LENGTH_PROP, INT_CAST, CHAR_CAST, TILDE, PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal NOT, OR, AND;
@@ -202,6 +202,30 @@ for_stmt ::= FOR:forLabel LPAREN expr SEMI
              {:
                 Translator._goto(forLabel.FalseLabel());
                 Translator._label(c1.FalseLabel());
+             :}
+             |
+             FOR:forLabel LPAREN ID:iter COLON ID:arr RPAREN
+             {:
+                 // check iter's type is the same as arr's type
+                 if (Variables.getType(iter) != Variables.getType(arr)) {
+                     Translator._errorTrace("FOR: Incompatibilidad de tipos " + iter + ", " + arr);
+                 }
+                 // declare the actual iterator
+                 String acc = Translator.getNewTmpVar("int");
+                 Translator._applyAssign(acc, "0");
+                 // Get the array length
+                 int length = Integer.parseInt(Variables.getLength(arr));
+
+                 Translator._label(forLabel.TrueLabel());
+                 Translator._if(String.format("%d < %s", length - 1, acc), forLabel.FalseLabel());
+                 Translator._applyAssign(iter, String.format("%s[%s]", arr, acc));
+                 Translator._applyOp(acc, acc, "+", "1");
+
+             :}
+             stmt
+             {:
+                 Translator._goto(forLabel.TrueLabel());
+                 Translator._label(forLabel.FalseLabel());
              :}
              ;
 

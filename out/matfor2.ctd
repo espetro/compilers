@@ -1,0 +1,31 @@
+    m[0] = 0;
+    m[1] = 2;
+    m[2] = 4;
+    t0 = 0;
+L0:
+    if (2 < t0) goto L1;
+    i = m[t0];
+    t0 = t0 + 1;
+    t1 = 75 + i;
+# Comprobacion de rango
+    if (j < 0) goto L3;
+    if (3< j) goto L3;
+    if (3 == j) goto L3;
+    goto L2;
+L3:
+    error;
+    halt;
+L2:
+    st[j] = t1;
+    t2 = j + 1;
+    j = t2;
+    goto L0;
+L1:
+    t3 = 0;
+L4:
+    if (2 < t3) goto L5;
+    ch = st[t3];
+    t3 = t3 + 1;
+    printc ch;
+    goto L4;
+L5:

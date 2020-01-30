@@ -59,6 +59,7 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 %% // Token definitions - highest to lowest
 
 ";" { return symbol(sym.SEMI); }
+":" { return symbol(sym.COLON); }
 "," { return symbol(sym.COMMA); }
 "(" { return symbol(sym.LPAREN); }
 ")" { return symbol(sym.RPAREN); }

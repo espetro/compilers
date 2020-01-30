@@ -1,0 +1,86 @@
+    i = 0;
+L0:
+    m_length = 3;
+    if (i < m_length) goto L2;
+    goto L3;
+L1:
+    t0 = i + 1;
+    i = t0;
+    goto L0;
+L2:
+    t1 = i + 65;
+# Comprobacion de rango
+    if (i < 0) goto L5;
+    if (3< i) goto L5;
+    if (3 == i) goto L5;
+    goto L4;
+L5:
+    error;
+    halt;
+L4:
+    m[i] = t1;
+# Comprobacion de rango
+    if (i < 0) goto L7;
+    if (3< i) goto L7;
+    if (3 == i) goto L7;
+    goto L6;
+L7:
+    error;
+    halt;
+L6:
+    t2 = m[i];
+# Comprobacion de rango
+    if (i < 0) goto L9;
+    if (3< i) goto L9;
+    if (3 == i) goto L9;
+    goto L8;
+L9:
+    error;
+    halt;
+L8:
+    st[i] = t2;
+    goto L1;
+L3:
+    m_length = 3;
+    t3 = m_length - 1;
+    i = t3;
+L10:
+    if (0 < i) goto L12;
+    goto L13;
+L11:
+    t4 = i - 1;
+    i = t4;
+    goto L10;
+L12:
+    t5 = 0;
+L14:
+    if (2 < t5) goto L15;
+    x = m[t5];
+    t5 = t5 + 1;
+    t6 = i - 1;
+# Comprobacion de rango
+    if (t6 < 0) goto L17;
+    if (3< t6) goto L17;
+    if (3 == t6) goto L17;
+    goto L16;
+L17:
+    error;
+    halt;
+L16:
+    t7 = m[t6];
+    t8 = x + t7;
+# Comprobacion de rango
+    if (i < 0) goto L19;
+    if (3< i) goto L19;
+    if (3 == i) goto L19;
+    goto L18;
+L19:
+    error;
+    halt;
+L18:
+    m[i] = t8;
+    print x;
+    goto L14;
+L15:
+    goto L11;
+L13:

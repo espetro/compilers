@@ -1,0 +1,38 @@
+    m[0] = 0;
+    m[1] = 1;
+    m[2] = 2;
+    t1 = 0;
+L0:
+    if (2 < t1) goto L1;
+    i1 = m[t1];
+    t1 = t1 + 1;
+    t2 = 0;
+L2:
+    if (2 < t2) goto L3;
+    i2 = m[t2];
+    t2 = t2 + 1;
+    t3 = 0;
+L4:
+    if (2 < t3) goto L5;
+    i3 = m[t3];
+    t3 = t3 + 1;
+    t4 = i2 + i3;
+    t5 = t4 * 3;
+    t6 = i2 + i3;
+# Comprobacion de rango
+    if (t5 < 0) goto L7;
+    if (3< t5) goto L7;
+    if (3 == t5) goto L7;
+    goto L6;
+L7:
+    error;
+    halt;
+L6:
+    m[t5] = t6;
+    goto L4;
+L5:
+    goto L2;
+L3:
+    print i1;
+    goto L0;
+L1:
