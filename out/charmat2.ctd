@@ -1,0 +1,12 @@
+    t0 = 65;
+    st[0] = t0;
+    t0 = 66;
+    st[1] = t0;
+    t0 = 67;
+    st[2] = t0;
+    t1 = st[2];
+    printc t1;
+    t2 = st[1];
+    printc t2;
+    t3 = st[0];
+    printc t3;

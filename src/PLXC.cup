@@ -4,8 +4,8 @@ import java.util.*;
 
 // %%
 
-terminal ASSIGN, INT, CHAR, SEMI, COMMA, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
-terminal INT_CAST, CHAR_CAST, TILDE, PLUS, MINUS, TIMES, DIV, UMINUS;
+terminal ASSIGN, INT, CHAR, SEMI, COMMA, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET;
+terminal LENGTH_PROP, INT_CAST, CHAR_CAST, TILDE, PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal NOT, OR, AND;
 terminal String IF, ELSE, DO, WHILE;
@@ -13,7 +13,7 @@ terminal Condition FOR;
 terminal String ID, CHAR_CONST, NUMBER;
 
 nonterminal program, statement_list, stmt, vardeclare, vartype, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
-nonterminal String expr, typecast, tilded_expr, varinit;
+nonterminal String expr, typecast, tilded_expr, array_expr, varinit, vardims, init_list;
 nonterminal Condition cond, logical;
 
 // lowest priority
@@ -82,31 +82,60 @@ vartype ::= CHAR
             {: Variables.setCurrentType("int"); :}
             ;
 
-vardeclare ::= vardeclare:dec COMMA ID:id varinit:value
+vardeclare ::= vardeclare:dec COMMA ID:id vardims:dims varinit:value
                {:
-                   Variables.declareVar(id);
+                   Variables.declareVar(id, dims);
 
                    if (value.length() > 0) {
-                       Translator.assignment(id, value);
+                       // Case 1: The variable is initialized right away
+                       if (dims.length() > 0) {
+                           // Case 1.1: The variable is an array
+                           Arrays.init(id, value);
+                       } else {
+                           Translator.assignment(id, value);
+                       }
                    }
                :}
                |
-               ID:id varinit:value
+               ID:id vardims:dims varinit:value
                {:
-                   Variables.declareVar(id);
+                   Variables.declareVar(id, dims);
 
                    if (value.length() > 0) {
-                       Translator.assignment(id, value);
+                       // Case 1: The variable is initialized right away
+                       if (dims.length() > 0) {
+                           // Case 1.1: The variable is an array
+                           Arrays.init(id, value);
+                       } else {
+                           Translator.assignment(id, value);
+                       }
                    }
                :}
                ;
 
-varinit ::= ASSIGN expr:e
-            {: RESULT = e; :}
+vardims ::= LBRACKET NUMBER:n RBRACKET
+            {: RESULT = n; :}
             |
             // empty
             {: RESULT = new String(); :}
             ;
+
+varinit ::= ASSIGN expr:e
+            {: RESULT = e; :}
+            |
+            ASSIGN LCURLY init_list:ls RCURLY
+            {: RESULT = ls; :}
+            |
+            // empty
+            {: RESULT = new String(); :}
+            ;
+
+init_list ::= init_list:ls COMMA expr:e
+              {: RESULT = ls + "," + e; :}
+              |
+              expr:e
+              {: RESULT = e; :}
+              ;
 
 // ================================================================
 // ======================= IF STATEMENT ===========================
@@ -200,7 +229,17 @@ expr ::= expr:e1 PLUS expr:e2
          {: RESULT = e; :}
          |
          ID:id ASSIGN expr:e
-         {: RESULT = Translator.assignment(id, e); :}
+         {:
+             Variables.checkVar(id);
+             RESULT = id;
+
+             if (Variables.isArray(id) && Variables.isArray(e)) {
+                 Arrays.copy(id, e);
+             } else {
+                 Translator.assignment(id, e);
+             }
+
+         :}
          |
          ID:id
          {:
@@ -219,7 +258,13 @@ expr ::= expr:e1 PLUS expr:e2
          |
          tilded_expr:e
          {: RESULT = e; :}
+         |
+         array_expr:arr
+         {: RESULT = arr; :}
          ;
+
+// ================================================================
+// ========================= TYPECASTING ==========================
 
 typecast ::= INT_CAST expr:e
              {:
@@ -241,6 +286,9 @@ typecast ::= INT_CAST expr:e
                  }
              :}
              ;
+
+// ================================================================
+// ======================= CHAR OPERATIONS ========================
 
 tilded_expr ::= TILDE expr:e // ~'a' or ~var1
                 {:
@@ -289,6 +337,43 @@ tilded_expr ::= TILDE expr:e // ~'a' or ~var1
                     RESULT = t0;
                 :}
                 ;
+
+// ================================================================
+// ====================== ARRAY EXPRESSIONS =======================
+
+array_expr ::= ID:id LBRACKET expr:e RBRACKET
+               {:
+                   Variables.checkVar(id);
+                   String type = Variables.getType(id);
+                   RESULT = Translator.getNewTmpVar(type);
+
+                   Arrays.check(id, e);
+                   Translator._applyAssign(RESULT, id + "[" + e + "]"); // .assignment() can't digest array expr as of now
+               :}
+               |
+               ID:id LBRACKET expr:e1 RBRACKET ASSIGN expr:e2
+               {:
+                   Variables.checkVar(id);
+                   RESULT = id;
+
+                   Arrays.check(id, e1);
+                   e2 = Variables.isChar(e2) ? Char.toInt(e2) : e2;
+                   Translator._applyAssign(id + "[" + e1 + "]", e2);
+               :}
+               |
+               ID:id ASSIGN LCURLY init_list:ls RCURLY
+               {:
+                   Arrays.init(id, ls);
+               :}
+               |
+               ID:id LENGTH_PROP
+               {:
+                   RESULT = id + "_length";
+                   Variables.declareVar(RESULT, "0");
+                   // other way is to init id_length when the arr is declared; then when ".length", just RESULT = id + "_length"
+                   Translator._applyAssign(RESULT, Variables.getLength(id));
+               :}
+               ;
 
 // ================================================================
 // ======================== COMPARISON OPS ========================

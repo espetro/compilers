@@ -1,0 +1,4 @@
+# Error: La longitud de las listas st 'A','B','C' no son iguales
+    error;
+    t0 = st[0];
+    printc t0;

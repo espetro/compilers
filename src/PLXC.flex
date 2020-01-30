@@ -64,6 +64,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 ")" { return symbol(sym.RPAREN); }
 "{" { return symbol(sym.LCURLY); }
 "}" { return symbol(sym.RCURLY); }
+"[" { return symbol(sym.LBRACKET); }
+"]" { return symbol(sym.RBRACKET); }
 
 "+" { return symbol(sym.PLUS); }
 "-" { return symbol(sym.MINUS); }
@@ -89,6 +91,8 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "char" { return symbol(sym.CHAR); }
 "(int)" { return symbol(sym.INT_CAST); }
 "(char)" { return symbol(sym.CHAR_CAST); }
+
+".length" { return symbol(sym.LENGTH_PROP); }
 
 "print" { return symbol(sym.PRINT); }
 "if" { return symbol(sym.IF, Translator.getNewLabel()); }

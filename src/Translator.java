@@ -77,12 +77,13 @@ public class Translator {
         return tag;
     }
 
+
     public static String assignment(String id, String expr) {
         String type0 = Variables.getType(id);
         String type1 = Variables.getType(expr);
 
         if (type0 != type1 && (!Variables.isTemporal(id) && !Variables.isTemporal(expr))) {
-            // Case 0: they differ in type (unless both are temporal, which are internal operations and allowed (charoper8.plx)
+            // Case 0: they differ in type (unless both are temporal, which is an internal operation and ofc allowed (charoper8.plx)
             Translator._errorTrace("Las expresiones " + id + ", " + expr + " no son tipo-compatibles");
         } else {
             // Case 1: both have the same type
@@ -149,6 +150,10 @@ public class Translator {
 
     public static void _comment(String info) {
         err.println(String.format("# %s", info));
+    }
+
+    public static void _error() {
+        out.println(_indent + "error;");
     }
 
     public static void _halt() {

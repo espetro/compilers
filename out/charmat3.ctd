@@ -1,0 +1,9 @@
+    st[0] = 88;
+    st[1] = 47;
+    st[2] = 90;
+    t1 = st[2];
+    printc t1;
+    t2 = st[1];
+    printc t2;
+    t3 = st[0];
+    printc t3;

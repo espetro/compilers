@@ -5,9 +5,11 @@ import java.util.Map;
 
 class Attributes {
     protected String type;
+    protected String length;
 
-    public Attributes(String type) {
+    public Attributes(String type, String length) {
         this.type = type;
+        this.length = length;
     }
 }
 
@@ -15,12 +17,13 @@ public class Variables {
     private static Map<String, Attributes> variables = new HashMap<>();
     private static String currentType = "none";
 
-    public static void declareVar(String id) {
-        variables.put(id, new Attributes(currentType));
+    public static void declareVar(String id, String dim) {
+        String length = dim.isEmpty() ? "0" : dim;
+        variables.put(id, new Attributes(currentType, length));
     }
 
     public static void declareTemp(String id, String type) {
-        variables.put(id, new Attributes(type));
+        variables.put(id, new Attributes(type, "0"));
     }
     public static void setCurrentType(String type) {
         currentType = type;
@@ -43,6 +46,15 @@ public class Variables {
         return str.contains("\'");
     }
 
+    public static boolean isArrayExpr(String str) { return str.contains("["); }
+
+    public static boolean isArray(String str) {
+        // 'str' is an array if it's a variable and its length is not 0
+        return isDeclared(str) && !variables.get(str).length.equals("0");
+    }
+
+    public static boolean isIntConstant(String str) { return str.matches("0|([1-9][0-9]*)"); }
+
     public static String getType(String expr) {
         // Gets the type of the given expr (either a constant or a variable)
         String type;
@@ -52,5 +64,9 @@ public class Variables {
             type = isChar(expr) ? "char" : "int";
         }
         return type;
+    }
+
+    public static String getLength(String id) {
+        return isDeclared(id) ? variables.get(id).length : "0";
     }
 }

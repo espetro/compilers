@@ -1,4 +1,4 @@
-char st[3]  ;
+char st[3];
 st = {'A','B','C' };
 print(st[2]);
 print(st[1]);
