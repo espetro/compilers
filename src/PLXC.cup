@@ -95,7 +95,7 @@ vardeclare ::= vardeclare COMMA ID:_id vardims:_dims varinit:_init
                    Variables.declareVar(_id, length);
 
                    if (!_init.isEmpty()) {
-                       if (_init.contains(",")) {
+                       if (_init.contains(",")) { // check for array init (eg {1,2,3})
                            Arrays.init(_id, _init);
                        } else {
                            Translator.assignment(_id, _init);
@@ -112,10 +112,7 @@ vardims ::= LBRACKET NUMBER:n RBRACKET
             ;
 
 varinit ::= ASSIGN expr:e
-            {: RESULT = e; :}
-            |
-            ASSIGN LCURLY init_list:ls RCURLY
-            {: RESULT = ls; :}
+            {: RESULT = e; :} // init_list is also an expr (eg {1,2,3})
             |
             // empty
             {: RESULT = new String(); :}
@@ -224,6 +221,8 @@ expr ::= expr:e1 PLUS expr:e2
          {:
              if (Variables.isArray(id) && Variables.isArray(e)) { // both are arrays
                  Arrays.copy(id, e);
+             } else if(Variables.isArray(id) && e.contains(",")) { // "e" is an init_list (eg {1,2,3})
+                 Arrays.init(id, e);
              } else {
                  Translator.assignment(id, e);
              }
@@ -241,6 +240,9 @@ expr ::= expr:e1 PLUS expr:e2
          |
          STRING_CONST:str
          {: RESULT = str; :}
+         |
+         LCURLY init_list:ls RCURLY
+         {: RESULT = ls; :}
          |
          array_expr:e
          {: RESULT = e; :}
@@ -267,9 +269,6 @@ array_expr ::= ID:id LBRACKET expr:e RBRACKET
                    e2 = Variables.isChar(e2) ? Chars.toInt(e2) : e2;
                    Translator._applyAssign(String.format("%s[%s]", id, e1), e2);
                :}
-               |
-               ID:id ASSIGN LCURLY init_list:ls RCURLY
-               {: Arrays.init(id, ls); :}
                |
                ID:id LENGTH_PROP
                {: RESULT = Variables.getLength(id); :} // just return the length

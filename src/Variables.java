@@ -19,8 +19,8 @@ public class Variables {
         variables.put(id, new Attributes(currentType, length));
     }
 
-    public static void declareTemp(String id, String type) {
-        variables.put(id, new Attributes(type, "0"));
+    public static void declareTemp(String id, String type, String len) {
+        variables.put(id, new Attributes(type, len));
     }
 
     public static void setCurrentType(String type) { currentType = type; }
@@ -57,11 +57,13 @@ public class Variables {
 
     public static boolean isIntConst(String str) { return str.matches("0|([1-9][0-9]*)"); }
 
-    public static boolean isCharConst(String str) { return str.contains("\'"); }
+    public static boolean isCharConst(String str) { return str.contains("\'") && !isArrayConst(str); }
 
     public static boolean isStringConst(String str) { return str.contains("\""); }
 
-    public static boolean isArrayConst(String str) { return str.contains("["); }
+    public static boolean isArrayConst(String str) { return str.contains(","); } // eg {1,2,3}
+
+    public static boolean isArrayAccess(String str) { return str.contains("["); } // eg st[0]
 
     public static boolean isArray(String id) {
         Attributes _default = new Attributes("none", "0");
@@ -69,15 +71,15 @@ public class Variables {
     }
 
     public static boolean isCharVar(String id) {
-        return (isDeclared(id) && getType(id) == "char") || false;
+        return (isDeclared(id) && getType(id) == "char");
     }
 
     public static boolean isIntVar(String id) {
-        return (isDeclared(id) && getType(id) == "int") || false;
+        return (isDeclared(id) && getType(id) == "int");
     }
 
     public static boolean isStringVar(String id) {
-        return (isDeclared(id) && getType(id) == "string") || false;
+        return (isDeclared(id) && getType(id) == "string");
     }
 
     public static boolean isChar(String str) {

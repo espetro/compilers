@@ -19,9 +19,16 @@ public class Translator {
 
     public static String getNewTmpVar(String type) {
         String id = "t" + tmpVarCount++;
-        Variables.declareTemp(id, type);
+        Variables.declareTemp(id, type, "0");
         return id;
     }
+
+    public static String getNewTmpArr(String type, String length) {
+        String id = "t" + tmpVarCount++;
+        Variables.declareTemp(id, type, length);
+        return id;
+    }
+
     public static String getNewLabel() {
         return "L" + labelCount++;
     }
@@ -60,12 +67,22 @@ public class Translator {
     }
 
     public static void print(String expr) {
-        if (Variables.isCharConst(expr)) {
-            _printc(Chars.toInt(expr));
-        } else if (Variables.isCharVar(expr)) {
-            _printc(expr);
+        if (Variables.isChar(expr)) {
+            if (Variables.isArray(expr)) {
+                Arrays.print(expr, "char");
+            } else {
+                expr = Variables.isCharConst(expr) ? Chars.toInt(expr) : expr;
+                _print(expr, "char");
+            }
+        } else if (Variables.isArrayConst(expr)) { // i.e. {1,2,3} or similar
+            String[] tempArray = Arrays.parse(expr);
+            _print(tempArray[0], tempArray[1]);
         } else {
-            _print(expr);
+            if (Variables.isArray(expr)) {
+                Arrays.print(expr, "int");
+            } else {
+                _print(expr, "int");
+            }
         }
     }
 
@@ -96,12 +113,12 @@ public class Translator {
         out.println(String.format("%sif (%s) goto %s;", _indent, cond, label));
     }
 
-    public static void _print(String exp) {
-        out.println(String.format("%sprint %s;", _indent, exp));
-    }
-
-    public static void _printc(String exp) {
-        out.println(String.format("%sprintc %s;", _indent, exp));
+    public static void _print(String exp, String type) {
+        if (type == "char") {
+            out.println(String.format("%sprintc %s;", _indent, exp));
+        } else {
+            out.println(String.format("%sprint %s;", _indent, exp));
+        }
     }
 
     public static void _errorTrace(String info) {

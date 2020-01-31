@@ -1,5 +1,32 @@
 public class Arrays {
 
+    public static String[] parse(String init) {
+        // Parses an init list and creates a temporal holding it. The type has to be consistent in the init list.
+        // Returns a tuple (temp_id, array_type)
+
+        String[] list = init.split(",");
+        String type = Variables.getType(list[0]),
+               temp = Translator.getNewTmpArr(type, String.valueOf(list.length));
+
+        // System.out.println("Array type is " + type + " and length " + list.length + " " + init);
+        String expr;
+
+        for (int i = 0; i < list.length; i++) {
+            if (!Variables.getType(list[i]).equals(type)) { // type isn't consistent => ERROR
+                Translator._errorTrace("El tipo de la lista " + init + " no es consistente");
+            }
+
+            expr = list[i];
+            if (Variables.isChar(list[i])) {
+                expr = Chars.toInt(expr);
+            }
+
+            Translator._applyAssign(String.format("%s[%s]", temp, i), expr);
+        }
+
+        String result[] = {temp, type};
+        return result;
+    }
     public static void init(String id, String init) {
         String type = Variables.getType(id);
         int length = Integer.parseInt(Variables.getLength(id));
@@ -56,6 +83,16 @@ public class Arrays {
             Translator._error();
             Translator._halt();
             Translator._label(cond.TrueLabel());
+        }
+    }
+
+    public static void print(String id, String type) {
+        String tmp = Translator.getNewTmpVar(type);
+        int length = Integer.parseInt(Variables.getLength(id));
+
+        for (int i = 0; i < length; i++) {
+            Translator._applyAssign(tmp, String.format("%s[%s]", id, i));
+            Translator._print(tmp, type);
         }
     }
 }
