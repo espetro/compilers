@@ -15,6 +15,8 @@ public class Variables {
     private static Map<String, Attributes> variables = new HashMap<>();
     private static String currentType = "none";
 
+    public static void setCurrentType(String type) { currentType = type; }
+
     public static void declareVar(String id, String length) {
         variables.put(id, new Attributes(currentType, length));
     }
@@ -23,8 +25,9 @@ public class Variables {
         variables.put(id, new Attributes(type, len));
     }
 
-    public static void setCurrentType(String type) { currentType = type; }
-
+    public static void updateString(String id, String length) {
+        variables.replace(id, new Attributes("string", length));
+    }
     // ================================= GETTERS =================================
 
     public static String getType(String id) {
@@ -59,7 +62,7 @@ public class Variables {
 
     public static boolean isCharConst(String str) { return str.contains("\'") && !isArrayConst(str); }
 
-    public static boolean isStringConst(String str) { return str.contains("\""); }
+    public static boolean isStringConst(String str) { return str.contains("\"") && !isArrayConst(str); }
 
     public static boolean isArrayConst(String str) { return str.contains(","); } // eg {1,2,3}
 
@@ -91,10 +94,6 @@ public class Variables {
     }
 
     public static boolean isString(String str) {
-        if (isDeclared(str)) {
-            return variables.get(str).type == "string";
-        } else {
-            return isStringConst(str);
-        }
+        return isStringVar(str) || isStringConst(str);
     }
 }

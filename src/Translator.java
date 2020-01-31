@@ -67,6 +67,7 @@ public class Translator {
     }
 
     public static void print(String expr) {
+        // Case 1: is Character
         if (Variables.isChar(expr)) {
             if (Variables.isArray(expr)) {
                 Arrays.print(expr, "char");
@@ -74,10 +75,15 @@ public class Translator {
                 expr = Variables.isCharConst(expr) ? Chars.toInt(expr) : expr;
                 _print(expr, "char");
             }
-        } else if (Variables.isArrayConst(expr)) { // i.e. {1,2,3} or similar
-            String[] tempArray = Arrays.parse(expr);
-            _print(tempArray[0], tempArray[1]);
-        } else {
+        } // Case 2: is Array
+        else if (Variables.isArrayConst(expr)) { // i.e. {1,2,3} or similar
+            String tempArray = Arrays.parse(expr);
+            print(tempArray); // reinserts it in the function (now it'll be either a String/Char/Int variable!)
+        } // Case 3: is String
+        else if (Variables.isString(expr)) {
+            Strings.print(expr);
+        } // Case 4: is Int
+        else {
             if (Variables.isArray(expr)) {
                 Arrays.print(expr, "int");
             } else {
@@ -114,10 +120,10 @@ public class Translator {
     }
 
     public static void _print(String exp, String type) {
-        if (type == "char") {
-            out.println(String.format("%sprintc %s;", _indent, exp));
-        } else {
-            out.println(String.format("%sprint %s;", _indent, exp));
+        switch (type) {
+            case "char": out.println(String.format("%sprintc %s;", _indent, exp)); break;
+            case "string": out.println(String.format("%swritec %s;", _indent, exp)); break;
+            default: out.println(String.format("%sprint %s;", _indent, exp)); break; // "int"
         }
     }
 

@@ -95,8 +95,10 @@ vardeclare ::= vardeclare COMMA ID:_id vardims:_dims varinit:_init
                    Variables.declareVar(_id, length);
 
                    if (!_init.isEmpty()) {
-                       if (_init.contains(",")) { // check for array init (eg {1,2,3})
+                       if (Variables.isArrayConst(_init)) { // check for array init (eg {1,2,3})
                            Arrays.init(_id, _init);
+                       } else if (Variables.isString(_init)) {
+                           Strings.assign(_id, _init);
                        } else {
                            Translator.assignment(_id, _init);
                        }
@@ -223,6 +225,8 @@ expr ::= expr:e1 PLUS expr:e2
                  Arrays.copy(id, e);
              } else if(Variables.isArray(id) && e.contains(",")) { // "e" is an init_list (eg {1,2,3})
                  Arrays.init(id, e);
+             } else if (Variables.isString(id) && Variables.isString(e)) { // "e" is a string (eg "abc")
+                 String.assign(id, e);
              } else {
                  Translator.assignment(id, e);
              }

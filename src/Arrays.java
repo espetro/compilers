@@ -1,8 +1,8 @@
 public class Arrays {
 
-    public static String[] parse(String init) {
+    public static String parse(String init) {
         // Parses an init list and creates a temporal holding it. The type has to be consistent in the init list.
-        // Returns a tuple (temp_id, array_type)
+        // Returns a tuple the temporal_id
 
         String[] list = init.split(",");
         String type = Variables.getType(list[0]),
@@ -24,8 +24,7 @@ public class Arrays {
             Translator._applyAssign(String.format("%s[%s]", temp, i), expr);
         }
 
-        String result[] = {temp, type};
-        return result;
+        return temp;
     }
     public static void init(String id, String init) {
         String type = Variables.getType(id);
