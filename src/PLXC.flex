@@ -50,7 +50,10 @@ UnicodeCharacter = \' \\u [0-9A-Fa-f]{4} \'
 SpecialCharacter = \' ("\\b" | "\\n" | "\\f" | "\\r" | "\\t" | "\\\\" | "\'" | "\"") \'
 Character = \' [^\r\n] \'
 Identifier = [A-Za-z_][A-Za-z0-9_]*
+
 Number = 0 | [1-9][0-9]*
+OctNumber = 0 {Number}
+HexNumber = "0x" {Number}
 
 LineBreak = \n|\r|\r\n
 SingleSpace = [ \f\t]
@@ -119,6 +122,14 @@ WhiteSpace = {LineBreak} | {SingleSpace}
     return symbol(sym.CHAR_CONST, "'" + result + "'");
 }
 {Number} { return symbol(sym.NUMBER, yytext()); }
+{OctNumber} {
+    int result = Integer.parseInt(yytext(), 8);
+    return symbol(sym.NUMBER, String.valueOf(result));
+}
+{HexNumber} {
+    int result = Integer.parseInt(yytext().substring(2), 16);
+    return symbol(sym.NUMBER, String.valueOf(result));
+}
 
 {WhiteSpace} { /* ignore */ }
 {Comment} { /* ignore */ }
