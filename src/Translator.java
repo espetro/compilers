@@ -60,7 +60,8 @@ public class Translator {
         if (cond1 && cond2) {
             Translator._errorTrace("ASSIGN: Tipos no compatibles ("+ ident + ", "+ expr);
         }
-        expr = Variables.isCharConst(expr) ? Chars.toInt(expr) : expr;
+
+        expr = Variables.toVMType(expr);
 
         _applyAssign(ident, expr);
         return ident;

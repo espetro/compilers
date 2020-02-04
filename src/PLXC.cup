@@ -270,7 +270,7 @@ array_expr ::= ID:id LBRACKET expr:e RBRACKET
                    RESULT = id;
 
                    Arrays.check(id, e1);
-                   e2 = Variables.isChar(e2) ? Chars.toInt(e2) : e2;
+                   e2 = Variables.toVMType(e2);
                    Translator._applyAssign(String.format("%s[%s]", id, e1), e2);
                :}
                |

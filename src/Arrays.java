@@ -27,8 +27,8 @@ public class Arrays {
         return temp;
     }
     public static void init(String id, String init) {
-        String type = Variables.getType(id);
         int length = Integer.parseInt(Variables.getLength(id));
+        String val, type = Variables.getType(id);
         String[] values = init.split(",");
 
         if (length >= values.length) {
@@ -38,7 +38,8 @@ public class Arrays {
                     Translator._errorTrace("Array: error de tipos (" + id + ", " + values[i] + ")");
                 }
                 String to = String.format("%s[%s]", id, i);
-                Translator._applyAssign(to, values[i]);
+                val = Variables.toVMType(values[i]);
+                Translator._applyAssign(to, val);
             }
         } else {
             Translator._errorTrace("Las dimensiones no coinciden (" + id + ", " + init + ")");

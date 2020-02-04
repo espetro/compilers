@@ -46,6 +46,19 @@ public class Variables {
         return variables.getOrDefault(id, _default).length;
     }
 
+    public static String toVMType(String expr) {
+        // returns the associated Bytecode type for each JavaPL type (Int to Int, Char to Int, String to Int[])
+        // This function is only ran in CUP (varinit and array_assign) and in Arrays.init
+        if (isCharConst(expr)) {
+            return Chars.toInt(expr);
+        } else if (isStringConst(expr)) {
+            return expr;
+        } else if (isIntConst(expr)) {
+            return expr;
+        } else { // A VARIABLE
+            return expr;
+        }
+    }
     // ================================= CHECKERS =================================
 
     public static void checkVar(String id) {
