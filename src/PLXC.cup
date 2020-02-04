@@ -226,7 +226,7 @@ expr ::= expr:e1 PLUS expr:e2
              } else if(Variables.isArray(id) && e.contains(",")) { // "e" is an init_list (eg {1,2,3})
                  Arrays.init(id, e);
              } else if (Variables.isString(id) && Variables.isString(e)) { // "e" is a string (eg "abc")
-                 String.assign(id, e);
+                 Strings.assign(id, e);
              } else {
                  Translator.assignment(id, e);
              }
