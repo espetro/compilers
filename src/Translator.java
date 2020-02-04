@@ -35,8 +35,8 @@ public class Translator {
     // ===================================================================
     // ===================== NON-TERMINAL GENERATORS =====================
 
-    public static String arithmetic(String e1, String txt, String e2, boolean autoAsign) {
-        String result = autoAsign ? e1 : getNewTmpVar();
+    public static String arithmetic(String e1, String txt, String e2, boolean autoAssign) {
+        String result = autoAssign ? e1 : getNewTmpVar();
         _applyOp(e1, txt, e2, result);
         return result;
     }
