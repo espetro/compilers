@@ -11,6 +11,7 @@ terminal NOT, OR, AND;
 terminal String IF, ELSE, DO, WHILE;
 terminal Condition FOR;
 terminal String ID, CHAR_CONST, STRING_CONST, NUMBER;
+// terminal List<String> ;
 
 nonterminal statement_list, stmt, vartype, vardeclare, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
 nonterminal String expr, array_expr, vardims, varinit, init_list;
@@ -81,8 +82,10 @@ vardeclare ::= vardeclare COMMA ID:_id vardims:_dims varinit:_init
                    Variables.declareVar(_id, length);
 
                    if (!_init.isEmpty()) {
-                       if (_init.contains(",")) {
+                       if (Variables.isArrayConst(_init)) { // check for array init (eg {1,2,3})
                            Arrays.init(_id, _init);
+                       } else if (Variables.isString(_init)) {
+                           Strings.assign(_id, _init);
                        } else {
                            Translator.assignment(_id, _init);
                        }

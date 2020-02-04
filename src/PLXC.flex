@@ -23,10 +23,10 @@ LineComment = "//" {InputCharacter}* {LineBreak}?
 MultiLineComment = "/*" ~"*/"
 
 InputCharacter = [^\r\n]
-UnicodeCharacter = \' \\u [0-9A-Fa-f]{4} \'
-SpecialCharacter = \' ("\\b" | "\\n" | "\\f" | "\\r" | "\\t" | "\\\\" | "\'" | "\"") \'
-Character = \' {InputCharacter}+ \'
-String = \" {InputCharacter}* \"
+UnicodeCharacter = \' "\u" [0-9A-Fa-f]{4} \'
+SpecialCharacter = \' ("\b" | "\n" | "\f" | "\r" | "\t" | "\\" | "\'" | "\"") \'
+Character = \' {InputCharacter} \'
+String = \" [^\r\n\"]* \"
 Identifier = [A-Za-z_][A-Za-z0-9_]*
 TemporalIdentifier = "t"{Number}
 
@@ -101,7 +101,47 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 }
 {Character} { return symbol(sym.CHAR_CONST, yytext()); } // all char constants have \'
 
-{String} { return symbol(sym.STRING_CONST, yytext()); } // all string constants have \"
+{String} { // TODO: best thing would be to have a jflex state STRING then parse each symbol independently
+    String specialRegex = "\\[bnrtf'\"\\]", // recognize if it's an special character
+           uniRegex = "\\u[a-fA-F0-9]{4}", // recognize if it's an Unicode character
+           collected = yytext().replace("\"", ""),
+           matchChar;
+
+    List<String> checked = new ArrayList<>();
+    while (!collected.isEmpty()) {
+        System.out.println("Current state is: (" + collected + ", " + checked + ")");
+
+        if (collected.startsWith("\\")) {
+            matchChar = collected.substring(1,2); // char after the backslash (either u or (b,r,t,..))
+            String result;
+            switch (matchChar) {
+                case "u": // it's unicode
+                    System.out.println("(u) Matched char is " + matchChar);
+                    String hexCode = collected.substring(2,6); // takes out \\ and u and selects the hex code
+                    result = String.valueOf((char) Integer.parseInt(hexCode, 16));
+                    collected = collected.substring(6);
+                    break;
+                default: // it's a special char
+                    System.out.println("(other) Matched char is " + matchChar);
+                    result = String.valueOf(Chars.matchControlNoBackslash(matchChar));
+                    collected = collected.substring(2);
+                    break;
+            }
+            checked.add(result);
+        } else {
+            checked.add(collected.substring(0,1));
+            collected = collected.substring(1);
+        }
+    }
+
+    String out = new String();
+
+    for (String chr : checked) {
+        out += chr;
+    }
+
+    return symbol(sym.STRING_CONST, "\"" + out + "\"");
+}
 
 {Number} { return symbol(sym.NUMBER, yytext()); }
 {OctalNumber} {

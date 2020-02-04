@@ -6,6 +6,8 @@ public class Strings {
      */
     public static void print(String str) {
         // Prints either a String constant or a String variable
+        str = str.replace("\"", "");
+
         if (Variables.isStringVar(str)) {
             String tmp = Translator.getNewTmpVar("char");
             int length = Integer.parseInt(Variables.getLength(str));
@@ -15,16 +17,16 @@ public class Strings {
                 Translator._print(tmp, "string");
             }
         } else {
-            str = str.replace("\"", "") + "\n"; // Adds an EOL character at the end (see PLX specification)
-            String[] list = str.split(""); // take out DOUBLE QUOTES!!
-            String expr;
+            if (!str.isEmpty()) {
+                String[] list = str.split("");
+                String expr;
 
-            // System.out.println("Input list is " + Arrays.toString(list) + " " + str + " " + Arrays.toString(str.toCharArray()));
-
-            for (int i = 0; i < list.length; i++) {
-                expr = Chars.toInt(list[i]);
-                Translator._print(expr, "string");
+                for (int i = 0; i < list.length; i++) {
+                    expr = Variables.toVMType("'" + list[i] + "'");
+                    Translator._print(expr, "string"); // as it's done as a String, it needs to be printed as String
+                }
             }
+            Translator._print("10", "string"); // prints a '\n'
         }
     }
 
@@ -36,13 +38,15 @@ public class Strings {
             length = Variables.getLength(expr);
             copy(id, expr);
         } else { // disjoint OR
-            expr = expr.replace("\"", "") + "\n";
+            expr = expr.replace("\"", "");
             String ls[] = expr.split("");
 
             for (int i = 0; i < ls.length; i++) {
-                Translator._applyAssign(String.format("%s[%s]", id, i), ls[i]);
+                String chr = Variables.toVMType("'" + ls[i] + "'"); // convert from char to int
+                Translator._applyAssign(String.format("%s[%s]", id, i), chr);
             }
-            length = String.valueOf(ls.length);
+            Translator._applyAssign(String.format("%s[%s]", id, ls.length), "10"); // adds the '\n'
+            length = String.valueOf(ls.length + 1);
         }
 
         Variables.updateString(id, length);

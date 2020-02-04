@@ -1,5 +1,3 @@
    writec 97;
-   writec 92;
-   writec 92;
-   writec 99;
+   writec 8;
    writec 10;

@@ -2,11 +2,6 @@
    writec 115;
    writec 112;
    writec 97;
-   writec 92;
-   writec 117;
-   writec 48;
-   writec 48;
-   writec 102;
-   writec 49;
+   writec 241;
    writec 97;
    writec 10;
