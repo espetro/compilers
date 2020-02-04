@@ -246,7 +246,7 @@ expr ::= expr:e1 PLUS expr:e2
          {: RESULT = str; :}
          |
          LCURLY init_list:ls RCURLY
-         {: RESULT = ls; :}
+         {: RESULT = ls; System.out.println(ls); :}
          |
          array_expr:e
          {: RESULT = e; :}

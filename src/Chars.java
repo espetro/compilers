@@ -19,7 +19,7 @@ public class Chars {
     }
 
     public static String toInt(String str) {
-        char tmp = str.replace("'", "").charAt(0);
+        char tmp = str.replace("'", "").trim().charAt(0);
         return String.valueOf((int) tmp);
     }
 
