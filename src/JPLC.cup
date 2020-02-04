@@ -248,6 +248,7 @@ cond ::= expr:e1 EQ expr:e2
              Translator._goto(tmp.FalseLabel());
 
              /* ==== FOLLOWING CODE IS COMMENTED AS THERE'S AN ERROR WITH BYTECODE (but it's right!) ==== */
+             // ERROR "Inconsistent stack height 0 != 1"
 //             Translator._duplicate(); // in order to do comparison two times!!
 //
 //             Translator._ifge(tmpLabel);
