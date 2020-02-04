@@ -1,0 +1,15 @@
+x = 2;
+x = x + 1;
+t0 = x + x;
+x = x + 1;
+t1 = t0 + x;
+y = t1;
+x = x + 1;
+t2 = y * x;
+x = x + 1;
+t3 = t2 * x;
+x = x - 1;
+x = x - 1;
+t4 = x * x;
+t5 = t3 - t4;
+print t5;

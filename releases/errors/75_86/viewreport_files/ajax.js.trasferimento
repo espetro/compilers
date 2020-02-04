@@ -1,0 +1,101 @@
+///////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------
+// Esta libreria se encarga de modelar la comunicacion mediante ajax.
+// @author conejo/guzman
+//-----------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////
+
+
+var xmlHttp;// instancia global de XMLHttpRequest
+
+///////////////////////////////////////////////////////////////////////////////
+function createXmlHttpRequest() {
+    if(window.ActiveXObject) {
+        xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
+    } else if(window.XMLHttpRequest) {
+        xmlHttp=new XMLHttpRequest();
+    }
+}
+///////////////////////////////////////////////////////////////////////////////
+/**
+ * Metodo que se le pasa como parametro la consulta y la funcion javascript que
+ * recibira la respuesta.
+ */
+function jsStartAjaxRequest(url, listener) {
+    createXmlHttpRequest();
+    xmlHttp.open("GET",url ,true);
+    xmlHttp.onreadystatechange=listener;
+    xmlHttp.send(null);
+}
+//////////////////////////////////////////////////////////////////////////////
+/**
+ * Metodo que se le pasa como parametro la consulta y la funcion javascript que
+ * recibira la respuesta.
+ */
+function jsStartAjaxPostRequest(url, param, listener, modeSync) {
+	if (modeSync==null) {
+		modeSync = true;
+	}
+    createXmlHttpRequest();
+    xmlHttp.open("POST",url ,modeSync);
+    xmlHttp.onreadystatechange=listener;
+    xmlHttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlHttp.send(param);
+}
+///////////////////////////////////////////////////////////////////////////////
+/**
+ * Funcion que devuelve el objeto xmlHttpRequest
+ */
+function jsGetXmlHttpRequest () {
+    return xmlHttp;
+}
+///////////////////////////////////////////////////////////////////////////////
+function sleep(milliseconds) {
+    var start = new Date().getTime();
+    for (var i = 0; i < 1e7; i++) {
+        if ((new Date().getTime() - start) > milliseconds){
+            break;
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+function jsUploadFileRequest(url, path, filename, content, listener, modeSync, jsessionid) {
+	if (modeSync==null) {
+		modeSync = true;
+	}
+    createXmlHttpRequest();
+    xmlHttp.open("POST", url ,modeSync);
+    var boundary=Math.random().toString().substr(2);
+    xmlHttp.setRequestHeader("content-type", "multipart/form-data; charset=utf-8; boundary=" + boundary);
+    if (listener!=null) {
+        xmlHttp.onreadystatechange=listener;
+    } else {
+        xmlHttp.onreadystatechange=defaultListener;
+    }
+    if (jsessionid!=null) {
+        xml.setRequestHeader('Cookie', jsessionid);
+    }
+    var multipart = "";
+    multipart += '--' + boundary + '\r\nContent-Disposition: form-data; name="PATH"'
+                + '\r\n\r\n' + path + '\r\n';
+    multipart += '--' + boundary + '\r\nContent-Disposition: form-data; name="FILE1" filename="'+filename+'"'
+                + '\r\nContent-type: text/plain'
+                + '\r\n' + content + '\r\n';
+    multipart += '--'+boundary+'--\r\n';
+    xmlHttp.send(multipart);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+function defaultListener () {
+    try {
+        var req = jsGetXmlHttpRequest();
+        if(req.readyState==4 && req.status==200) {
+            var texto = req.responseText;
+            // alert(texto);
+        } else if (req.statusText!= '' && xmlHttp.status!=200) {
+            alert("Error loading page: " + req.statusText);
+        }
+    } catch (err) {}
+}

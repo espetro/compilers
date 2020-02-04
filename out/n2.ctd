@@ -1,0 +1,11 @@
+x = 1;
+if (x == y) goto L1;
+goto L2;
+label L1;
+a = 2;
+goto L0;
+label L2;
+goto L0;
+label L0;
+error;
+# IO error: variable no declarada

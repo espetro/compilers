@@ -1,0 +1,28 @@
+///////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------
+// Esta libreria recoge las funciones javascript relativas a la visualizacion
+// de items en el aula virtual.
+// Ambito de uso: la JSP 'cuestion.jsp'.
+// @author guzman
+//-----------------------------------------------------------------------------
+/**
+ * Funcion que permite dotar a los radio button de la posibilidad de dejar 
+ * ningun elemento sin seleccionar, aun habiendo seleccionado uno previamente.
+ * @param radio El componente radio button
+ * @param theHidden Componente hidden definido auxiliarmente para dotar al radio
+ * 					button de la funcionalidad deseada.
+ */
+function jsUnselectRadioButton(radio, theHidden){
+	for (i=0; i< radio.length; i++) {
+		if (radio[i].checked) {
+			if (theHidden.value == "") {
+				theHidden.value = radio[i].value;
+			} else if (radio[i].value == theHidden.value){				
+				radio[i].checked = false;
+				theHidden.value = "";				
+			} else {
+				theHidden.value = radio[i].value;
+			}					
+		}
+	}	
+}

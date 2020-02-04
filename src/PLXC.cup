@@ -1,0 +1,315 @@
+import java_cup.runtime.*;
+import java.lang.*;
+import java.util.*;
+
+// %%
+
+terminal ASSIGN, COMMA, SEMI, PRINT, LPAREN, RPAREN, LCURLY, RCURLY;
+terminal DOUBLE_PLUS, PLUS, DOUBLE_MINUS, MINUS, TIMES, DIV, UMINUS, MOD;
+terminal EQ, NEQ, LT, GT, LE, GE;
+terminal NOT, OR, AND;
+terminal INT;
+terminal STEP, DOWNTO, TO;
+terminal String IF, ELSE, DO, WHILE;
+terminal Condition FOR;
+terminal String ID, NUMBER;
+
+nonterminal Object statement_list, stmt, if_stmt, else_stmt, var_declare, var_init;
+nonterminal while_stmt, do_while_stmt, for_stmt;
+nonterminal String double_expr, expr, step, for_orientation;
+nonterminal Condition cond, logical, for_to_stmt;
+
+// lowest priority
+precedence left IF;
+precedence right ASSIGN;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIV, MOD;
+precedence right UMINUS, NOT; // unary ops
+precedence nonassoc DOUBLE_PLUS, DOUBLE_MINUS; // both are used in prefix and postfix notation?!?!
+precedence left AND, OR;
+precedence left ELSE;
+// highest priority
+
+
+// %%
+
+
+statement_list ::= statement_list stmt
+                   |
+                   stmt
+                   ;
+
+stmt ::= INT var_declare SEMI
+         |
+         expr SEMI
+         |
+         if_stmt
+         |
+         for_stmt
+         |
+         for_to_stmt
+         |
+         do_while_stmt
+         |
+         while_stmt
+         |
+         PRINT expr:e SEMI
+         {: Translator.print(e); :}
+         |
+         LCURLY
+         {: Translator.incrementBlockLevel(); :}
+         statement_list RCURLY
+         {: Translator.decrementBlockLevel(); :}
+         |
+         error:e SEMI // handles errors without stopping the exec
+         {: /* Translator._errorTrace("Error de compilacion"); */ :}
+         ;
+
+// ================================================================
+// Variables are collected here, and checked if available inside the Translator class
+// ===================== VARIABLE DECLARATION =====================
+
+var_declare ::= var_declare COMMA var_init
+                |
+                var_init
+                ;
+
+var_init ::= ID:i ASSIGN expr:e
+             {:
+                Translator.addVar(i);
+                Translator.assignment(i, e);
+             :}
+             |
+             ID:i
+             {: Translator.addVar(i); :}
+             ;
+
+// ================================================================
+// ======================= IF STATEMENT ===========================
+
+if_stmt ::= IF:endIf LPAREN cond:c RPAREN
+            {: Translator._label(c.TrueLabel()); :}
+            stmt
+            {:
+               Translator._goto(endIf);
+               Translator._label(c.FalseLabel());
+            :}
+            else_stmt
+            {:
+               Translator._goto(endIf);
+               Translator._label(endIf);
+            :}
+            ;
+
+else_stmt ::= ELSE stmt
+              |
+              // empty
+              ;
+
+// ================================================================
+// ====================== WHILE STATEMENT =========================
+
+while_stmt ::= WHILE:loopLabel LPAREN
+               {: Translator._label(loopLabel); :}
+               cond:c RPAREN
+               {: Translator._label(c.TrueLabel()); :}
+               stmt
+               {:
+                  Translator._goto(loopLabel);
+                  Translator._label(c.FalseLabel());
+               :}
+               ;
+
+do_while_stmt ::= DO:loopLabel
+                  {: Translator._label(loopLabel); :}
+                  stmt WHILE LPAREN cond:c RPAREN SEMI
+                  {:
+                     Translator._label(c.TrueLabel());
+                     Translator._goto(loopLabel);
+                     Translator._label(c.FalseLabel());
+                  :}
+                  ;
+
+// ================================================================
+// ======================= FOR STATEMENT ==========================
+
+for_stmt ::= FOR:forLabel LPAREN expr SEMI
+             // with TrueLabel we model the loop label
+             {: Translator._label(forLabel.TrueLabel()); :}
+             cond:c1 SEMI
+             // with FalseLabel we model the modifier expression
+             {: Translator._label(forLabel.FalseLabel()); :}
+             expr RPAREN
+             {:
+                Translator._goto(forLabel.TrueLabel());
+                Translator._label(c1.TrueLabel());
+             :}
+             stmt
+             {:
+                Translator._goto(forLabel.FalseLabel());
+                Translator._label(c1.FalseLabel());
+             :}
+             ;
+
+for_to_stmt ::= FOR:forLabel expr:e1 for_orientation:op expr:e2
+                {:
+                  Translator._label(forLabel.TrueLabel());
+                  // TO => "+" => "e1 < e2" comparison
+                  // DOWNTO => "-" => "e2 < e1" comparison
+                  // Moreover, tags are permuted so that the range is [start, end] not [start, end)
+                  // start=20, end=10, step=-1 => start < end only when start=9, then exit the loop
+                  if(op == "+") { RESULT = Translator.comparison(e2, Translator.LT, e1, true); }
+                  else { RESULT = Translator.comparison(e1, Translator.LT, e2, true); }
+
+                  // a label for the "STEP"
+                  Translator._label(forLabel.FalseLabel());
+                :}
+                step:n
+                {:
+                  Translator.arithmetic(e1, op, n, true);
+                  Translator._goto(forLabel.TrueLabel());
+                  // a label for the actual loop
+                  Translator._label(RESULT.TrueLabel());
+                :}
+                DO stmt
+                {:
+                  Translator._goto(forLabel.FalseLabel());
+                  Translator._label(RESULT.FalseLabel());
+                :}
+                ;
+
+for_orientation ::= TO
+                    {: RESULT = "+"; :}
+                    |
+                    DOWNTO
+                    {: RESULT = "-"; :}
+                    ;
+
+step ::= STEP expr:e
+         {: RESULT = e; :}
+         |
+         // empty
+         {: RESULT = "1"; :}
+         ;
+
+// ================================================================
+// ======================== ARITHMETIC OPS ========================
+
+expr ::= expr:e1 PLUS expr:e2
+         {: RESULT = Translator.arithmetic(e1, "+", e2, false); :}
+         |
+         expr:e1 MINUS expr:e2
+         {: RESULT = Translator.arithmetic(e1, "-", e2, false); :}
+         |
+         expr:e1 TIMES expr:e2
+         {: RESULT = Translator.arithmetic(e1, "*", e2, false); :}
+         |
+         expr:e1 DIV expr:e2
+         {: RESULT = Translator.arithmetic(e1, "/", e2, false); :}
+         |
+         expr:e1 MOD expr:e2
+         {:
+            String t0 = Translator.arithmetic(e1, "/", e2, false);
+            String t1 = Translator.arithmetic(t0, "*", e2, false);
+            RESULT = Translator.arithmetic(e1, "-", t1, false);
+         :}
+         |
+         double_expr:e
+         {: RESULT = e; :}
+         |
+         MINUS expr:e
+         {: RESULT = Translator.arithmetic("0", "-", e, false); :}
+         %prec UMINUS
+         |
+         LPAREN expr:e RPAREN
+         {: RESULT = e; :}
+         |
+         ID:i ASSIGN expr:e
+         {: RESULT = Translator.assignment(i, e); :}
+         |
+         ID:i
+         {: RESULT = i; :}
+         |
+         NUMBER:n
+         {: RESULT = n; :}
+         ;
+
+double_expr ::= ID:i DOUBLE_PLUS
+                {: RESULT = Translator.arithmetic(i, "+", "1", true); :}
+                |
+                DOUBLE_PLUS ID:i
+                {: RESULT = Translator.arithmetic(i, "+", "1", true); :}
+                |
+                ID:i DOUBLE_MINUS
+                {: RESULT = Translator.arithmetic(i, "-", "1", true); :}
+                |
+                DOUBLE_MINUS ID:i
+                {: RESULT = Translator.arithmetic(i, "-", "1", true); :}
+                ;
+
+// ================================================================
+// ======================== COMPARISON OPS ========================
+
+cond ::= expr:e1 EQ expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.EQ, e2, false); :}
+         |
+         expr:e1 LT expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.LT, e2, false); :}
+         |
+         expr:e1 NEQ expr:e2
+         {: RESULT = Translator.comparison(e1, Translator.EQ, e2, true); :}
+         |
+         expr:e1 GT expr:e2
+         {: RESULT = Translator.comparison(e2, Translator.LT, e1, false); :}
+         |
+         expr:e1 LE expr:e2
+         {:
+            Condition eq0 = Translator.comparison(e1, Translator.EQ, e2, false);
+            Translator._label(eq0.FalseLabel());
+            Condition lt0 = Translator.comparison(e1, Translator.LT, e2, false);
+            Translator._label(eq0.TrueLabel());
+            Translator._goto(lt0.TrueLabel());
+            RESULT = lt0;
+         :}
+         |
+         expr:e1 GE expr:e2
+         {:
+            Condition eq1 = Translator.comparison(e1, Translator.EQ, e2, false);
+            Translator._label(eq1.FalseLabel());
+            Condition lt1 = Translator.comparison(e2, Translator.LT, e1, false);
+            Translator._label(eq1.TrueLabel());
+            Translator._goto(lt1.TrueLabel());
+            RESULT = lt1;
+         :}
+         |
+         LPAREN cond:c RPAREN
+         {: RESULT = c; :}
+         |
+         logical:l
+         {: RESULT = l; :}
+         ;
+
+// ================================================================
+// ======================== LOGICAL OPS ===========================
+
+logical ::= NOT cond:c
+            {: c.permute(); RESULT = c; :}
+            |
+            cond:c1 AND
+            {: Translator._label(c1.TrueLabel()); :}
+            cond:c2
+            {:
+                Translator._label(c1.FalseLabel());
+                Translator._goto(c2.FalseLabel());
+                RESULT = c2;
+            :}
+            |
+            cond:c1 OR
+            {: Translator._label(c1.FalseLabel()); :}
+            cond:c2
+            {:
+                Translator._label(c1.TrueLabel());
+                Translator._goto(c2.TrueLabel());
+                RESULT = c2;
+            :}
+            ;

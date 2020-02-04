@@ -1,0 +1,120 @@
+///////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------
+// Esta libreria recoge las funciones javascript relacionadas con el paso de valores
+// a los applets
+// Ambito de uso: 
+//     'solucion.jsp' y demas parte de esta pagina
+//     'itemPrevisualizar.jsp'
+// Requiere de la implementacion adicional de la funcion jsIdentificarRespuesta(respuesta) 
+// @author conejo
+//-----------------------------------------------------------------------------
+///////////////////////////////////////////////////////////////////////////////
+		function ResolverApplet(idenunciado, respuestaAlumno, correccionAlumno) { 
+					// alert('ResolverApplet id='+idenunciado);
+				var applet = eval('document.applets.'+idenunciado);
+				if (applet == null) {
+					applet = eval('document.'+idenunciado);
+				}
+				ok = false;
+		        if (applet != null)  {
+		        	 try {
+		        		 ok  = applet.resolver(respuestaAlumno, correccionAlumno);
+		        	 } catch (error1) {
+						    try {
+						    	ok  = applet.resolver(respuestaAlumno);
+							} catch (error3) {
+							    try {
+							    	ok  = applet.resolver();
+			                    } catch (error4) {
+							        try {
+								    	ok  = applet.Resolver(respuestaAlumno);
+			                        } catch (error5) {
+								        try {
+									    	ok  = applet.Resolver();
+				                        } catch (error6) {
+				                        	ok = false;
+				                        }
+			                        }
+			                    }
+						    }
+		        	 }
+				} else { // applet == null, intentar con javascript
+			    	try {
+                        window[idenunciado](respuestaAlumno, correccionAlumno);
+			    	} catch (error1) {
+			    		try {
+                            window[idenunciado](respuestaAlumno);
+			    		} catch (error2) {
+			    			try {
+			    				ok = eval(idenunciado + '(\''  + respuestaAlumno + ',' + correccionAlumno + '\');');
+			    			} catch (error3) {
+		                        try {
+		    				    	ok = eval(idenunciado + '(\''  + respuestaAlumno + '\');');
+		                        } catch (error4) {
+		                        	try {
+		                        		ok = resolver(respuestaAlumno, correccionAlumno);
+		                        	} catch (error5) {
+				                        try {
+				                            ok = resolver(respuestaAlumno);
+				                        } catch (error6) {
+					                        try {
+					                            ok = resolver();
+					                        } catch (error7) {
+					                        	ok = false;
+					                        }
+				                        }
+		                        	}
+		                        }			    			
+			    			}
+			    		}
+				   	}
+				}
+		        return ok;
+		}
+///////////////////////////////////////////////////////////////////////////////
+		function SolucionApplet(idenunciado, respuestaCorrecta) { 
+			var ok = false;
+			var applet = eval('document.applets.'+idenunciado);
+			if (applet == null) {
+				applet = eval('document.'+idenunciado);
+			}
+			if (applet!=null) {
+				try {
+					ok = applet.solucion(respuestaCorrecta);
+				} catch (error3) {
+					ok = false;
+				}
+			} else {
+		    	try {
+			    	 window[idenunciado](respuestaCorrecta);
+		    	} catch (error1) {
+                    try {
+    			    	ok = eval(idenunciado + '(\''  + respuestaCorrecta + '\');');
+                    } catch (error2) {
+                        try {
+                            ok = solucion(respuestaCorrecta);
+                        } catch (error3) {
+	                        try {
+	                            ok = solucion();
+	                        } catch (error4) {
+	                        	ok = false;
+	                        }
+                        }
+                    }
+			   	}
+			}
+			return ok;
+		}
+
+// conejo: Para posible compatibilidad hacia atras....	
+// Se podian llamar igual, pero no se porque el javascript no lo hace bien.
+///////////////////////////////////////////////////////////////////////////////
+		function Resolver(respuestaAlumno) { 
+			// alert('Resolver respuestaAlumno='+respuestaAlumno);
+			return ResolverApplet('enunciado', respuestaAlumno, null);
+		}
+///////////////////////////////////////////////////////////////////////////////
+		function Solucion(respuestaCorrecta) { 
+			// alert('Solucion respuestaCorrecta='+respuestaCorrecta);
+			return SolucionApplet('enunciado', respuestaCorrecta);
+		}

@@ -1,0 +1,236 @@
+body {margin:0;}
+
+
+@media only screen and (max-width : 360px) {
+	.labelLogin {font-size: 1.5rem;}
+	input.inputLogin {height: 2rem;}
+	.btnlogin {font-size: 1.5rem; width:100%;}
+	.layout {padding: 5px 5px 5px 5px; }
+	.container {padding: 5px 5px 5px 5px; }
+	
+	img.responsive {
+		max-width : 180px;
+	}
+}
+
+
+@media only screen  and (max-width: 480px) {
+  .labelLogin {font-size: 1.5rem;}
+  input.inputLogin {height: 3rem;}
+  .btnlogin {font-size: 1.5rem; width:100%;}
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 18px;}
+  .topnav a:not(:first-child) {display: none;}
+  .topnav a.icon {
+    float: right;
+    display: block;
+  }
+  .navbar div {display: none;}
+  .navbar a {display: none;}
+  .navbar a.icon {
+    float: right;
+    display: block;
+  }
+  .navbar a:hover, .dropdown:hover .dropbtn {
+    background-color: inherit;
+  }
+  
+  table.tablaCntTest {
+     width:99%;
+  }
+  
+  table.caja {
+     width:99%;
+  }
+   	
+table.iccFrameTable{
+  	width: 300px;
+}	
+ 
+iframe.iccFrame{
+  	width: 300px;
+}	
+ 
+img.iccImg {
+  	width: 300px;
+}	
+
+td.iccData {
+	display:none;
+}  
+
+td.iccClose {
+	display:inline;
+}	
+
+img.responsive {
+	max-width : 240px;
+}
+  
+}
+
+@media only screen  and (max-width: 600px) {
+  table.barraNavegacionTest {
+  	  display:none;
+  }
+  table.barraNavegacionTestPeque {
+  	  display:inherit;
+  }
+
+table.iccFrameTable{
+  	width: 375px;
+}	
+ 
+iframe.iccFrame{
+  	width: 375px;
+}	
+ 
+img.iccImg {
+  	width: 375px;
+}	
+
+td.iccData {
+	display:none;
+}  
+
+td.iccClose {
+	display:inline;
+}	
+
+img.responsive {
+	max-width : 300px;
+}
+ 
+}
+
+@media only screen  and (max-width: 800px) {
+  .labelLogin {font-size: 1.5rem;}
+  input.inputLogin {height: 3rem;}
+  .btnlogin {font-size: 1.5rem; width:100%;}
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 18px;}
+  .topnav.responsive {position: relative;}
+  .topnav.responsive .icon {
+	position: absolute;
+    right: 0;
+    top: 0;
+  }
+  .topnav.responsive a {
+    float: none;
+    display: block;
+    text-align: left;
+  }
+  .navbar.responsive {position: relative;}
+  .navbar.responsive .icon {
+	position: absolute;
+    right: 0;
+    top: 0;
+  }
+  .navbar.responsive a {
+    float: none;
+    display: block;
+    text-align: right;
+  }	
+  
+  td.Tabla_Celda_Texto_Opt,
+  .Tabla_Celda_Texto_Opt,
+  .Tabla_Celda_Texto_Cerrado_Opt,
+  .tablaCntSub .headerTbOpt, .headerTbSmallOpt,
+  .TabMenu,
+  .barraUsuarioFila  .textoIcono ,
+  .barraUsuarioFila  .textoIconoBold ,
+  .barraUsuarioFila1  .textoIcono ,
+  .barraUsuarioFila1  .textoIconoBold {
+     display: none;
+  }
+
+  
+  table.tablaCntTest {
+     width:95%;
+  }
+
+  .logo {
+  	 height:25px;
+  }
+  
+  .ocultable,
+  table.caminoHormigaTexto td.caminoHormigaMenu {
+  	display: block;
+  }
+  
+  .barraUsuarioFila {
+  	text-align: right;
+  	width: 5px;
+  }
+  
+  table.caminoHormiga,
+  table tr.caminoHormiga {
+  	top: 30;
+  }
+  
+  .headerBg {
+    height: 55px;
+  }
+  
+  .separadorTest {
+    border-bottom: 5px;
+    line-height: 0.5;
+  }
+  
+  
+  .tablaCnt {
+     position: absolute;
+	 top: 55px;
+     left: 0;
+	 margin: 10px;
+  }
+  
+  table.barraNavegacionTest,
+  table.barraNavegacionTestPeque {
+        z-index:5000; 
+        position:relative; 
+        top:20px; 
+        background-color:white; 
+  }
+
+  table.caja {
+     width:95%;
+  }
+	
+  input#nombre {
+     width:95%;
+  }
+  
+  img.responsive {
+	max-width : 400px;
+  }
+  	  	
+}
+
+@media only screen  and (max-width: 1024px) {
+  .TabMenu,
+  .FirstRow a.menuItem,
+  .FirstRowClicked a.menuItem  {
+     font-size: 10px;
+     line-height: 3.5;
+  }
+    
+  table.tablaCntTest {
+     width:90%;
+  }
+  
+  table.caja {
+     width:95%;
+  }
+  
+  img.responsive {
+	max-width : 512px;
+  }
+  
+}
+
+@media print {
+    div.flex {
+        display: block;
+    }
+}

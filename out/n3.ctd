@@ -1,0 +1,14 @@
+y = 1;
+x = y;
+if (x == y) goto L1;
+goto L2;
+label L1;
+x_1 = 3;
+t0 = x_1 + y;
+print t0;
+goto L0;
+label L2;
+goto L0;
+label L0;
+t1 = x + y;
+print t1;
