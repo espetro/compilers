@@ -5,7 +5,7 @@ import java.util.*;
 // %%
 
 terminal ASSIGN, INT, CHAR, STRING, SEMI, COMMA, PRINT, LPAREN, RPAREN, LCURLY, RCURLY, LBRACKET, RBRACKET;
-terminal LENGTH_PROP, PLUS, MINUS, TIMES, DIV, UMINUS;
+terminal LENGTH_PROP, CHAR_CAST, STRING_CAST, PLUS, MINUS, TIMES, DIV, UMINUS;
 terminal EQ, NEQ, LT, GT, LE, GE;
 terminal NOT, OR, AND;
 terminal String IF, ELSE, DO, WHILE;
@@ -13,19 +13,17 @@ terminal Condition FOR;
 terminal String ID, CHAR_CONST, STRING_CONST, NUMBER;
 // terminal List<String> ;
 
-nonterminal statement_list, stmt, vartype, vardeclare, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
-nonterminal String expr, array_expr, vardims, varinit, init_list;
+nonterminal statement_list, stmt, vartype, vardeclare_list, vardeclare, if_stmt, else_stmt, while_stmt, do_while_stmt, for_stmt;
+nonterminal String expr, cast_expr, array_expr, vardims, varinit, init_list;
 nonterminal Condition cond, logical;
 
 // lowest priority
-precedence left IF;
+precedence nonassoc IF, ELSE;
 precedence right ASSIGN;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
-precedence right UMINUS;
 precedence left AND, OR;
-precedence left ELSE;
-precedence right NOT;
+precedence right NOT, UMINUS, CHAR_CAST, STRING_CAST;
 // highest priority
 
 
@@ -37,7 +35,7 @@ statement_list ::= statement_list stmt
                    stmt
                    ;
 
-stmt ::= vartype vardeclare SEMI
+stmt ::= vartype vardeclare_list SEMI
          |
          expr SEMI
          |
@@ -54,14 +52,10 @@ stmt ::= vartype vardeclare SEMI
          |
          LCURLY statement_list RCURLY
          {: /* done in the inner statement list */ :}
-         ;
-
-         /**
          |
          error:e SEMI // handles errors while parsing (not recommended)
-         {: :}
+         {: Translator._errorTrace("Syntax error!"); :}
          ;
-         */
 
 // ================================================================
 // =================== VARIABLE/ARRAY DECLARE =====================
@@ -76,7 +70,12 @@ vartype ::= CHAR
             {: Variables.setCurrentType("string"); :}
             ;
 
-vardeclare ::= vardeclare COMMA ID:_id vardims:_dims varinit:_init
+vardeclare_list ::= vardeclare_list COMMA vardeclare
+                    |
+                    vardeclare
+                    ;
+
+vardeclare ::= ID:_id vardims:_dims varinit:_init
                {:
                    String length = _dims.isEmpty() ? "0" : _dims;
                    Variables.declareVar(_id, length);
@@ -84,23 +83,7 @@ vardeclare ::= vardeclare COMMA ID:_id vardims:_dims varinit:_init
                    if (!_init.isEmpty()) {
                        if (Variables.isArrayConst(_init)) { // check for array init (eg {1,2,3})
                            Arrays.init(_id, _init);
-                       } else if (Variables.isString(_init)) {
-                           Strings.assign(_id, _init);
-                       } else {
-                           Translator.assignment(_id, _init);
-                       }
-                   }
-               :}
-               |
-               ID:_id vardims:_dims varinit:_init
-               {:
-                   String length = _dims.isEmpty() ? "0" : _dims;
-                   Variables.declareVar(_id, length);
-
-                   if (!_init.isEmpty()) {
-                       if (Variables.isArrayConst(_init)) { // check for array init (eg {1,2,3})
-                           Arrays.init(_id, _init);
-                       } else if (Variables.isString(_init)) {
+                       } else if (Variables.isString(_init) || Variables.isChar(_init)) {
                            Strings.assign(_id, _init);
                        } else {
                            Translator.assignment(_id, _init);
@@ -228,7 +211,7 @@ expr ::= expr:e1 PLUS expr:e2
                  Arrays.copy(id, e);
              } else if(Variables.isArray(id) && e.contains(",")) { // "e" is an init_list (eg {1,2,3})
                  Arrays.init(id, e);
-             } else if (Variables.isString(id) && Variables.isString(e)) { // "e" is a string (eg "abc")
+             } else if (Variables.isString(id) && (Variables.isString(e) || Variables.isChar(e))) { // "e" is a string (eg "abc") or char (eg 'a')
                  Strings.assign(id, e);
              } else {
                  Translator.assignment(id, e);
@@ -249,11 +232,44 @@ expr ::= expr:e1 PLUS expr:e2
          {: RESULT = str; :}
          |
          LCURLY init_list:ls RCURLY
-         {: RESULT = ls; System.out.println(ls); :}
+         {: RESULT = ls; :}
          |
          array_expr:e
          {: RESULT = e; :}
+         |
+         cast_expr:e
+         {: RESULT = e; :}
          ;
+
+// ================================================================
+// ======================== CASTING OPS ===========================
+
+cast_expr ::= CHAR_CAST expr:e
+              {:
+                  if (Variables.isChar(e)) {
+                      RESULT = e;
+                  } else if (Variables.isIntConst(e)) {
+                      RESULT = Chars.fromInt(e);
+                  } else if (Variables.isIntVar(e)) {
+                      Variables.updateType(e, "char");
+                      RESULT = e;
+                  } else {
+                      Translator._errorTrace("No se puede aplicar (char) al tipo " + Variables.getType(e));
+                      RESULT = "";
+                  }
+              :}
+              |
+              STRING_CAST expr:e
+              {:
+                  if (Variables.isInt(e)) {
+                      Translator._errorTrace("No se puede aplicar (string) al tipo int");
+                      RESULT = "";
+                  } else {
+                      RESULT = Translator.getNewTmpArr("string", "1");
+                      Translator._applyAssign(RESULT + "[0]", e);
+                  }
+              :}
+              ;
 
 // ================================================================
 // ========================== ARRAY OPS ===========================
@@ -261,7 +277,7 @@ expr ::= expr:e1 PLUS expr:e2
 array_expr ::= ID:id LBRACKET expr:e RBRACKET
                {:
                    Variables.checkVar(id);
-                   RESULT = Translator.getNewTmpVar(Variables.getType(id));
+                   RESULT = Translator.getNewTmpVar("char"); // there are only char arrays (or strings aka CHAR ARRAYS)
 
                    Arrays.check(id, e);
                    Translator._applyAssign(RESULT, String.format("%s[%s]", id, e));
@@ -278,7 +294,13 @@ array_expr ::= ID:id LBRACKET expr:e RBRACKET
                :}
                |
                ID:id LENGTH_PROP
-               {: RESULT = Variables.getLength(id); :} // just return the length
+               {:
+                   Variables.checkVar(id);
+                   if (!Variables.isStringVar(id)) {
+                       Translator._errorTrace("Error al aplicar '.length' a una variable que no es de tipo 'string'");
+                   }
+                   RESULT = Variables.getLength(id);
+               :}
                ;
 
 // ================================================================

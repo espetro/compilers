@@ -71,7 +71,10 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "int" { return symbol(sym.INT); }
 "char" { return symbol(sym.CHAR); }
 "string" { return symbol(sym.STRING); }
+
 ".length" { return symbol(sym.LENGTH_PROP); }
+"(char)" { return symbol(sym.CHAR_CAST); }
+"(string)" { return symbol(sym.STRING_CAST); }
 
 "print" { return symbol(sym.PRINT); }
 "if" { return symbol(sym.IF, Translator.getNewLabel()); }
@@ -109,7 +112,7 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 
     List<String> checked = new ArrayList<>();
     while (!collected.isEmpty()) {
-        System.out.println("Current state is: (" + collected + ", " + checked + ")");
+        // System.out.println("Current state is: (" + collected + ", " + checked + ")");
 
         if (collected.startsWith("\\")) {
             matchChar = collected.substring(1,2); // char after the backslash (either u or (b,r,t,..))

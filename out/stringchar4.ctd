@@ -1,0 +1,10 @@
+   st[0] = 80;
+   st[1] = 76;
+   st[2] = 88;
+   st[3] = 67;
+   st[4] = 10;
+   t0 = st[1];
+   ch = t0;
+   printc ch;
+   t1 = st[3];
+   printc t1;

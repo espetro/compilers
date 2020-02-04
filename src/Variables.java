@@ -28,6 +28,11 @@ public class Variables {
     public static void updateString(String id, String length) {
         variables.replace(id, new Attributes("string", length));
     }
+
+    public static void updateType(String id, String type) {
+        String len = variables.get(id).length;
+        variables.replace(id, new Attributes(type, len));
+    }
     // ================================= GETTERS =================================
 
     public static String getType(String id) {

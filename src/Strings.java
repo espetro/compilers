@@ -37,7 +37,11 @@ public class Strings {
         if (Variables.isStringVar(expr)) {
             length = Variables.getLength(expr);
             copy(id, expr);
-        } else { // disjoint OR
+        } else if (Variables.isChar(expr)) {
+            length = "1";
+            String chr = Variables.toVMType(expr);
+            Translator._applyAssign(String.format("%s[0]", id), chr);
+        } else {
             expr = expr.replace("\"", "");
             String ls[] = expr.split("");
 
@@ -45,8 +49,7 @@ public class Strings {
                 String chr = Variables.toVMType("'" + ls[i] + "'"); // convert from char to int
                 Translator._applyAssign(String.format("%s[%s]", id, i), chr);
             }
-            Translator._applyAssign(String.format("%s[%s]", id, ls.length), "10"); // adds the '\n'
-            length = String.valueOf(ls.length + 1);
+            length = String.valueOf(ls.length); // adds the '\n' to the length
         }
 
         Variables.updateString(id, length);

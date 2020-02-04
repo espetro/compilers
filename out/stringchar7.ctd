@@ -1,0 +1,7 @@
+   st[0] = 80;
+   st[1] = 76;
+   st[2] = 88;
+   st[3] = 67;
+   tam = 4;
+   error;
+# Syntax error! null

@@ -1,0 +1,4 @@
+   ch = 122;
+   st[0] = ch;
+   t0 = st[0];
+   writec t0;
