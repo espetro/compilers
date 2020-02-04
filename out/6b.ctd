@@ -1,0 +1,18 @@
+t0[0] = 7;
+t0[1] = 4;
+t0[2] = 9;
+t1 = 0;
+t2 = 3;
+label L0;
+if (t1 < t2) goto L3;
+goto L4;
+label L1;
+t3 = t1 + 1;
+t1 = t3;
+goto L0;
+label L3;
+t4 = t0[t1];
+x = t4;
+print x;
+goto L1;
+label L4;
