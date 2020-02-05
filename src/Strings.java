@@ -4,9 +4,18 @@ public class Strings {
     /** A class that contains common methods use to process strings in the compiler.
      *  All Strings have two double-quotes.
      */
+
+    public static String stripQuotes(String str) {
+        // returns a string as-it-is, without the leading and trailing \" that identify the String type
+        if (str.charAt(0) != '"' || str.charAt(str.length() - 1) != '"') {
+            throw new RuntimeException("Error at stripping String quotes: " + str);
+        }
+        return str.substring(1, str.length() - 1);
+    }
+
     public static void print(String str) {
         // Prints either a String constant or a String variable
-        str = str.replace("\"", "");
+        str = stripQuotes(str);
 
         if (Variables.isStringVar(str)) {
             String tmp = Translator.getNewTmpVar("char");
@@ -42,7 +51,7 @@ public class Strings {
             String chr = Variables.toVMType(expr);
             Translator._applyAssign(String.format("%s[0]", id), chr);
         } else {
-            expr = expr.replace("\"", "");
+            expr = stripQuotes(expr);
             String ls[] = expr.split("");
 
             for (int i = 0; i < ls.length; i++) {

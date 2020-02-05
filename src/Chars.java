@@ -5,30 +5,13 @@ public class Chars {
 
     public static final char defaultChar = '\u0000';
 
-    public static char matchControlNoBackslash(String str) {
-        switch (str) {
-            case "\b":
-            case "b":
-                return '\b';
-            case "\f":
-            case "f":
-                return '\f';
-            case "\r":
-            case "r":
-                return '\r';
-            case "\t":
-            case "t":
-                return '\t';
-            case "\n":
-            case "n":
-                return '\n';
-            case "\'": return '\'';
-            case "\"": return '\"';
-            case "\\": return '\\';
-            default: return defaultChar;
+    public static String stripQuotes(String str) {
+        // returns the string as-it-is, without the leading and trailing \' that identify the Char type
+        if (str.charAt(0) != '\'' || str.charAt(str.length() - 1) != '\'') {
+            throw new RuntimeException("Error at stripping Char quotes: " + str);
         }
+        return str.substring(1, str.length() - 1);
     }
-
     public static char matchControl(String str) {
         switch (str) {
             case "\b": return '\b';
@@ -44,7 +27,7 @@ public class Chars {
     }
 
     public static String toInt(String str) {
-        str = str.replace("'", "");
+        str = stripQuotes(str);
         str = str.length() > 1 ? str.trim() : str;  // dont delete whitespace if it's the only char (whitespaces can also be printed!)
         char res, maybeSpecial = matchControl(str);
 

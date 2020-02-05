@@ -1,2 +1,2 @@
 print("a\"b\"c\"d\"");
-// Tengo que usar un estado en JFlex (ir a tutoria)
+// CUIDADO: Los Strings en el compilador usan \" alrededor del String. Hay que quitar solo el primer y ultimo \"

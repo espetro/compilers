@@ -232,7 +232,7 @@ expr ::= expr:e1 PLUS expr:e2
          {: RESULT = str; :}
          |
          LCURLY init_list:ls RCURLY
-         {: RESULT = ls; :}
+         {: RESULT = ls; :} // I should return a temporal array of type (char or int)
          |
          array_expr:e
          {: RESULT = e; :}
@@ -265,6 +265,16 @@ cast_expr ::= CHAR_CAST expr:e
                       Translator._errorTrace("No se puede aplicar (string) al tipo int");
                       RESULT = "";
                   } else {
+                      // so three options on here: either its another string, or a char, or a char array (this can be constant!)
+                      if (Variables.isString(e)) {
+                          // a
+                      } else if (Variables.isArrayConst(e)) {
+                          RESULT = Translator.getNewTmpArr("char", "1"); // at least 1 (this is updated right-away)
+                          Strings.assign(RESULT, e);
+                      } else if (Variables.isCharVar(e) && Variables.isArray(e)) {
+                          // RESULT = Translator.getNewTmpVar()
+                      }
+                      if (Variables.isArray(e))
                       RESULT = Translator.getNewTmpArr("string", "1");
                       Translator._applyAssign(RESULT + "[0]", e);
                   }

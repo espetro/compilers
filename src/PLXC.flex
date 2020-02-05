@@ -10,6 +10,9 @@ import java.util.*;
 %column
 
 %{
+    StringBuffer stringBuff = new StringBuffer();
+    boolean isCharSent = false;
+
     private Symbol symbol(int type) {
         return new Symbol(type, yyline, yycolumn);
     }
@@ -23,10 +26,7 @@ LineComment = "//" {InputCharacter}* {LineBreak}?
 MultiLineComment = "/*" ~"*/"
 
 InputCharacter = [^\r\n]
-UnicodeCharacter = \' "\u" [0-9A-Fa-f]{4} \'
-SpecialCharacter = \' ("\b" | "\n" | "\f" | "\r" | "\t" | "\\" | "\'" | "\"") \'
-Character = \' {InputCharacter} \'
-String = \" [^\r\n\"]* \"
+Unicode = [0-9A-Fa-f]{4}
 Identifier = [A-Za-z_][A-Za-z0-9_]*
 TemporalIdentifier = "t"{Number}
 
@@ -38,6 +38,8 @@ HexNumber = "0x" {Number}
 LineBreak = \n|\r|\r\n
 SingleSpace = [ \f\t]
 WhiteSpace = {LineBreak} | {SingleSpace}
+
+%xstate STRING, CHAR
 
 %% // Token definitions - highest to lowest
 
@@ -83,68 +85,11 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 "do" { return symbol(sym.DO, Translator.getNewLabel()); }
 "while" { return symbol(sym.WHILE, Translator.getNewLabel()); }
 
-{TemporalIdentifier} {
-    throw new RuntimeException("Cannot use temporal variable names: " + yytext());
-}
+{TemporalIdentifier} { return symbol(sym.ID, "_" + yytext()); } // t0 is parsed as _t0
 {Identifier} { return symbol(sym.ID, yytext()); }
 
-{UnicodeCharacter} {
-    // We have to preprocess the string to remove the double backslashes
-    String result = yytext().replace("'", "").substring(2); // takes out \', \\ and u
-    result = String.valueOf((char) Integer.parseInt(result, 16)); // converts from hex to dec then to char
-
-    return symbol(sym.CHAR_CONST, "'" + result + "'");
-}
-{SpecialCharacter} {
-    // Preprocess it
-    String special = yytext().replace("'", "").substring(1);
-    String result = String.valueOf(Chars.matchControl(special)); // matches each letter with its char equivalent
-
-    return symbol(sym.CHAR_CONST, "'" + result + "'");
-}
-{Character} { return symbol(sym.CHAR_CONST, yytext()); } // all char constants have \'
-
-{String} { // TODO: best thing would be to have a jflex state STRING then parse each symbol independently
-    String specialRegex = "\\[bnrtf'\"\\]", // recognize if it's an special character
-           uniRegex = "\\u[a-fA-F0-9]{4}", // recognize if it's an Unicode character
-           collected = yytext().replace("\"", ""),
-           matchChar;
-
-    List<String> checked = new ArrayList<>();
-    while (!collected.isEmpty()) {
-        // System.out.println("Current state is: (" + collected + ", " + checked + ")");
-
-        if (collected.startsWith("\\")) {
-            matchChar = collected.substring(1,2); // char after the backslash (either u or (b,r,t,..))
-            String result;
-            switch (matchChar) {
-                case "u": // it's unicode
-                    System.out.println("(u) Matched char is " + matchChar);
-                    String hexCode = collected.substring(2,6); // takes out \\ and u and selects the hex code
-                    result = String.valueOf((char) Integer.parseInt(hexCode, 16));
-                    collected = collected.substring(6);
-                    break;
-                default: // it's a special char
-                    System.out.println("(other) Matched char is " + matchChar);
-                    result = String.valueOf(Chars.matchControlNoBackslash(matchChar));
-                    collected = collected.substring(2);
-                    break;
-            }
-            checked.add(result);
-        } else {
-            checked.add(collected.substring(0,1));
-            collected = collected.substring(1);
-        }
-    }
-
-    String out = new String();
-
-    for (String chr : checked) {
-        out += chr;
-    }
-
-    return symbol(sym.STRING_CONST, "\"" + out + "\"");
-}
+\' { isCharSent = false; yybegin(CHAR); }
+\" { stringBuff.setLength(0); yybegin(STRING); }
 
 {Number} { return symbol(sym.NUMBER, yytext()); }
 {OctalNumber} {
@@ -159,5 +104,58 @@ WhiteSpace = {LineBreak} | {SingleSpace}
 {WhiteSpace} { /* ignore */ }
 {Comment} { /* ignore */ }
 
+<CHAR> {
+    \' {
+        if (!isCharSent) { throw new Error("empty character literal"); }
+        yybegin(YYINITIAL);
+    }
+
+    \\u {Unicode} {
+        String result = yytext().substring(2);
+        result = "" + ((char) Integer.parseInt(result, 16));
+        isCharSent = true;
+        return symbol(sym.CHAR_CONST, "'" + result + "'");
+    }
+    \\b { isCharSent = true; return symbol(sym.CHAR_CONST, "'" + "\b" + "'"); }
+    \\n { isCharSent = true; return symbol(sym.CHAR_CONST, "'" + "\n" + "'"); }
+    \\f { isCharSent = true; return symbol(sym.CHAR_CONST, "'" + "\f" + "'"); }
+    \\r { isCharSent = true; return symbol(sym.CHAR_CONST, "'" + "\r" + "'"); }
+    \\t { isCharSent = true; return symbol(sym.CHAR_CONST, "'" + "\t" + "'"); }
+    \\ { isCharSent = true; return symbol(sym.CHAR_CONST, "'" + "\\" + "'"); }
+    \\\' { isCharSent = true; return symbol(sym.CHAR_CONST, "'" + "\'" + "'"); }
+    \\\" { isCharSent = true; return symbol(sym.CHAR_CONST, "'" + "\"" + "'"); }
+
+    // a single "\" is illegal
+    \\ { throw new Error("Illegal character <" + yytext() + ">"); }
+
+    // this one can also read all of the characters above - but it's the last one checked
+    [^\r\n\'\\] { isCharSent = true; return symbol(sym.CHAR_CONST, "'" + yytext() + "'"); }
+}
+
+<STRING> {
+    \" { yybegin(YYINITIAL); return symbol(sym.STRING_CONST, "\"" + stringBuff.toString() + "\""); }
+
+    \\u {Unicode} {
+        String result = yytext().substring(2);
+        result = "" + ((char) Integer.parseInt(result, 16));
+        stringBuff.append(result);
+    }
+
+    \\b { stringBuff.append("\b"); }
+    \\n { stringBuff.append("\n"); }
+    \\f { stringBuff.append("\f"); }
+    \\r { stringBuff.append("\r"); }
+    \\t { stringBuff.append("\t"); }
+    \\\\ { stringBuff.append("\\"); }
+    \\\' { stringBuff.append("\'"); }
+    \\\" { stringBuff.append("\""); }
+
+    // a single "\" is illegal
+    \\ { throw new Error("Illegal character <" + yytext() + ">"); }
+
+    // this one can also read all of the characters above - but it's the last one checked
+    [^\r\n\"\\]+ { stringBuff.append(yytext()); }
+}
+
 // only catches 1 character at a time
-[^] { String txt = yytext(); throw new Error("Illegal character: (" + txt + ")\n"); }
+[^] { throw new Error("Illegal character: <" + yytext() + ">\n"); }

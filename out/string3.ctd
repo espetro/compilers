@@ -1,0 +1,9 @@
+   writec 97;
+   writec 34;
+   writec 98;
+   writec 34;
+   writec 99;
+   writec 34;
+   writec 100;
+   writec 34;
+   writec 10;
