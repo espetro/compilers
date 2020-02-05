@@ -39,6 +39,7 @@ LineBreak = \n|\r|\r\n
 SingleSpace = [ \f\t]
 WhiteSpace = {LineBreak} | {SingleSpace}
 
+// https://www.jflex.de/manual.html
 %xstate STRING, CHAR
 
 %% // Token definitions - highest to lowest
